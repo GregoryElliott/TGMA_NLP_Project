@@ -162,7 +162,96 @@ def get_pn_vec_from_range(db):
     return events
 
 
+### Awards Parsing  
+### Depends On: Nothing
+########################################################################
+EVENTS = get_event_indicies(get_tpm_arr(db2013))
+NUM_EVENTS = len(EVENTS)
+
+#### Functions for String-Index-Vectors ####
+#### Ex: "This is a sentence -> [0, 5, 8, 10, 19]
+def get_string_indicies(string):
+    '''Returns a String-Index-Vector for a given string'''
+    indicies_vec = [0]                  # init with str start
+    for n in range(0,len(string)):
+        if (string[n] == " "):
+            indicies_vec.append(n+1)
+    indicies_vec.append(len(string)+1)  # pushback ending pos
+    return indicies_vec
+
+
+def get_len(indicies_vec):
+    '''Returns the number of words given a String-Index-Vector'''
+    return len(indicies_vec) - 1
+
+
+def get_word(i, indicies_vec, string):
+    '''Returns the word at index i given a String-Index-Vector and a string'''
+    return string[indicies_vec[i]:(indicies_vec[i+1]-1)]
+
+
+def find_ind(i, indicies_vec):
+    for n in range(0,len(indicies_vec)):
+        if (indicies_vec[n] == i): return n
+    return -1
+
+        
+#### Awards Parsing ####
+def get_awards_matches(db, i, num_tweets):
+    '''[JSON DB] db, [U_Int] i, [U_Int] num_tweets -> List-of Matches'''
+    MIN_MATCH_THRESHOLD = 30
+    WORD_GRAB_COUNT = 10
+    def find_and_cut_or_add(matches_vec, string, start_i):
+        for match in matches_vec:
+            ind = 0
+            for n in range(0, len(string)):
+                ind +=1
+                if (n >= (len(match[0])-1)): break
+                if (string[n] != match[0][n]): break
+            if (ind < MIN_MATCH_THRESHOLD): continue #Skip if not really a match
+            else:
+                match[0] = match[0][:ind]
+                match[1] += 1
+                return
+        matches.append([results_str, 1]) #if no match append
+    event_i = get_event_indicies(get_tpm_arr((db)))[i]
+    matches = []
+    for n in range(0,num_tweets):
+        results_str = "Best "
+        tweet_i = event_i + n
+        tweet = ""
+        tweet = db[tweet_i]['text']
+        find_i = tweet.find("Best")
+        start_i = find_i 
+        if (find_i == -1): continue
+        tweet_index_vec = get_string_indicies(tweet)
+        tweet_index_vec_len = get_len(tweet_index_vec)
+        find_i = find_ind(find_i, tweet_index_vec)
+        for j in range(0,WORD_GRAB_COUNT):
+            find_i += 1
+            if (find_i >= tweet_index_vec_len):
+                break
+            word = get_word(find_i, tweet_index_vec, tweet)
+            if(word[:1].islower() and not (word == "in" or word == "a")):
+                break
+            else:
+                results_str += word + " "
+        if (results_str != ""):
+            find_and_cut_or_add(matches, results_str, find_i)
+    return matches
+
+def most_common_match(db, i, num_tweets):
+    return sorted(get_awards_matches(db,i,num_tweets), key=lambda x:x[1], reverse=True)[1]
+
+def p_most_common():
+    for n in range(0,NUM_EVENTS-1):
+        print most_common_match(db2013, n, 1000)
+
+
+
 #### ---------------------- API Accesing Functions ------------------------- ####
+
+
 def get_hosts(year):
     '''Hosts is a list of one or more strings. Do NOT change the name
     of this function or what it returns.'''
