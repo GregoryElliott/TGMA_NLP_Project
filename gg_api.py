@@ -32,7 +32,7 @@ OFFICIAL_AWARDS = [
 with open('gg2013.json') as data_2013:
     db2013 = json.load(data_2013)
 
-TPM_THRESHOLD = 700
+TPM_THRESHOLD = 1100
 
 def get_time(db, i):
     '''Returns a list of [Hour, Minutes] for a tweet at index i in db'''
@@ -177,7 +177,7 @@ def get_awards_matches(db, i, num_tweets):
         results_str = "Best "
         tweet_i = event_i + n
         tweet = ""
-        tweet = normalize_str(db[tweet_i]['text'])
+        tweet = db[tweet_i]['text']
         find_i = tweet.find("Best")
         start_i = find_i 
         if (find_i == -1): continue
@@ -198,12 +198,11 @@ def get_awards_matches(db, i, num_tweets):
     return matches
 
 def most_common_match(db, i, num_tweets):
-    return sorted(get_awards_matches(db,i,num_tweets), key=lambda x:x[1], reverse=True)[0]
+    return sorted(get_awards_matches(db,i,num_tweets), key=lambda x:x[1], reverse=True)[1]
 
 def p_most_common():
     for n in range(0,NUM_EVENTS-1):
         print most_common_match(db2013, n, 1000)
-#get_awards_matches(db2013,1,100)
 
 
 
