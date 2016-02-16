@@ -1,0 +1,52 @@
+best performance by an actress in a supporting role in a motion picture
+[u'megan fox', u'jonah hill']
+best performance by an actor in a mini-series or motion picture made for television
+[u'jessica alba', u'kiefer sutherland']
+best director - motion picture
+[u'halle berry']
+best original song - motion picture
+[u'jennifer lopez', u'jason statham']
+best performance by an actor in a motion picture - comedy or musical
+[u'jennifer garner']
+best performance by an actor in a supporting role in a series, mini-series or motion picture made for television
+[u'kristen bell', u'john krasinski']
+best performance by an actress in a motion picture - comedy or musical
+[u'will ferrell', u'kristen wiig']
+cecil b. demille award
+[u'robert downey, jr.']
+best performance by an actress in a mini-series or motion picture made for television
+[u'don cheadle', u'eva longoria']
+best animated feature film
+[u'sacha baron cohen']
+best motion picture - drama
+[u'julia roberts']
+best performance by an actress in a supporting role in a series, mini-series or motion picture made for television
+[u'dennis quaid', u'kerry washington']
+best performance by an actor in a television series - drama
+[u'salma hayek', u'paul rudd']
+best performance by an actress in a motion picture - drama
+[u'george clooney']
+best screenplay - motion picture
+[u'robert pattinson', u'amanda seyfried']
+best original score - motion picture
+[u'jennifer lopez', u'jason statham']
+best foreign language film
+[u'arnold schwarzenegger', u'sylvester stallone']
+best performance by an actor in a supporting role in a motion picture
+[u'bradley cooper', u'kate hudson']
+best motion picture - comedy or musical
+[u'dustin hoffman']
+best mini-series or motion picture made for television
+[u'don cheadle', u'eva longoria']
+best television series - drama
+[u'salma hayek', u'paul rudd']
+best performance by an actress in a television series - comedy or musical
+[u'aziz ansari', u'jason bateman']
+best television series - comedy or musical
+[u'jimmy fallon', u'jay leno']
+best performance by an actor in a motion picture - drama
+[u'george clooney']
+best performance by an actress in a television series - drama
+[u'nathan fillion', u'lea michele']
+best performance by an actor in a television series - comedy or musical
+[u'lucy liu', u'debra messing']
