@@ -1,5 +1,4 @@
-import json
-import time
+#import json
 import nltk
 #from nltk.book import FreqDist
 from collections import Counter
@@ -10,7 +9,12 @@ from nltk import bigrams
 from nltk import trigrams
 from nltk.tokenize import *
 import re
-import awards_parse
+
+# Not if this is how you file dependencies in python...
+from constants import *
+from awards_parse import *
+from events import *
+
 
 OFFICIAL_AWARDS = [
     'cecil b. demille award',
@@ -39,8 +43,7 @@ OFFICIAL_AWARDS = [
 
 #### ---------------------- Internal Functions ------------------------- ####
 
-with open('gg2013.json') as data_2013:
-    db2013 = json.load(data_2013)
+
 
 def normalize_str(s):
     '''Returns a normalized string with the first letter lowercase'''
