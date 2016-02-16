@@ -1,7 +1,9 @@
 import json
 import time
 import nltk
-from nltk.book import FreqDist
+#from nltk.book import FreqDist
+from collections import Counter
+from nltk import FreqDist
 from nltk.corpus import names
 from nltk.corpus import stopwords
 from nltk import bigrams
@@ -78,7 +80,7 @@ def get_event_indicies(tpm_arr):
 def normalize_str(s):
     '''Returns a normalized string with the first letter lowercase'''
     ns = ""
-    ns += s[0].lower()
+    ns += s[0]
     for i in range(1, len(s)):
         ns += s[i]
 
@@ -90,8 +92,11 @@ def strip_propers(s):
     proper_nouns = []
     noun_group = ""
     for token in s:
-        if (token[0].isupper()):
+        if (token[0].isupper()) or token[0] == '\'' or token[0] == '\"':
             noun_group += token + " "
+            if token[len(token) - 1] == '\'' or token[len(token) - 1] == '\"':
+                proper_nouns.append(noun_group)
+                noun_group = ""
         else:
             if(noun_group == ""): continue
             else:
@@ -181,6 +186,74 @@ def get_awards(year):
     '''Awards is a list of strings. Do NOT change the name
     of this function or what it returns.'''
     # Your code here
+    #pn_count_vec = [["none", 0]]
+    winners_old = []
+    db = db2013
+    events = []
+
+    propers = []
+
+    for e in db:      
+        if re.search(r'win(s)?(ner)?', e['text'], re.IGNORECASE) and re.search(r'best', e['text'], re.IGNORECASE):
+            for proper in strip_propers(normalize_str(e['text']).split()):
+                propers.append(proper)
+
+    freq = FreqDist(propers)
+    events.append(freq)
+
+    winners_names = Counter()
+    for p in events[0].most_common(1000):
+        if "Best" not in p[0]:
+            continue
+        item_split = p[0].split(" ")
+        new_string = ''
+        start = False     
+        print item_split   
+        for cur in item_split:
+            print cur
+            if start:
+                if len(cur) == 0:
+                    continue
+                if not cur[0].isupper() or ',' in cur or '\'s' in cur or '.' in cur or 'buy' in cur:
+                    break
+                new_string = new_string +  ' ' + cur
+            if cur == "Best":
+                new_string = 'Best'
+                start = True            
+        if new_string != '':
+            if new_string not in winners_names.keys():
+                winners_names[new_string] = 0
+            winners_names[new_string] += p[1]
+
+    for item in winners_names.most_common(50):
+        winners_old.append(item)
+        #stop = False
+        #remove = None
+        #for win in winners_old:
+            #if stop:
+                #break
+            #for cur in item[0].split(" "):
+                #if "Best" in cur:
+                    #continue
+                #if cur in win:
+                    #if len(item) > len(win):
+                        #winners_old.append(item[0])
+                        #remove = win
+                        #stop = True
+                        #break      
+        #if remove:
+            #winners_old.remove(remove) 
+
+
+        #winners_old.append(item[0])  
+    #winners = []          
+    #for winner in winners_old:
+        #winner_split = winner.split(' ')
+        #for win in winner_split:    
+            #if win not in winners
+
+    return winners_old
+
     return awards
 
 def get_nominees(year):
@@ -190,86 +263,64 @@ def get_nominees(year):
     # Your code here
     return nominees
 
-def get_winnersa(year):
-    '''Winners is a dictionary with the hard coded award
-    names as keys, and each entry containing a single string.
-    Do NOT change the name of this function or what it returns.'''
-    # Your code here
-    #db = 'db' + year
-    db = db2013
-    events = []
-    winners = []
-
-
-    #for event_index in get_event_indicies(get_tpm_arr((db))):
-        #pn_count_vec = []
-        #for n in range(500):
-            #for s in db[event_index + n]:
-                #if re.search(r'win(s)?(ner)?', s['text']):
-                    #for w in bigrams([w.lower() for w in word_tokenize(s['text']) if w.isalnum()]):
-                        #return
-        #bigram = [w for n in range(300) for s in sent_tokenize(db[event_index + n]['text']) if re.search(r'win(s)?(ner)?', s, re.IGNORECASE) and re.search(r'best', s, re.IGNORECASE) for w in bigrams([w.lower() for w in word_tokenize(s) if w.isalnum()])]
-    bigram = [w for s in db if re.search(r'win(s)?(ner)?', s['text'], re.IGNORECASE) and re.search(r'best', s['text'], re.IGNORECASE) for w in bigrams([w for w in word_tokenize(s['text'])]) if w[0][0].isupper() and w[1][0].isupper()]
-        #trigram = [w for n in range(300) for s in sent_tokenize(db[event_index + n]['text']) if re.search(r'win(s)?(ner)?', s, re.IGNORECASE) and re.search(r'best', s, re.IGNORECASE) for w in trigrams([w.lower() for w in word_tokenize(s) if w.isalnum()])]
-    trigram = [w for s in db if re.search(r'win(s)?(ner)?', s['text'], re.IGNORECASE) and re.search(r'best', s['text'], re.IGNORECASE) for w in trigrams([w for w in word_tokenize(s['text'])]) if w[0][0].isupper() and w[1][0].isupper() and w[2][0].isupper()]
-    name = bigram + trigram
-    pn_count_vec = FreqDist(name)
-    events.append(pn_count_vec)
-
-    for e in events:
-        winner = 0
-        for item in e.most_common(1000):
-            print item
-            #print item
-            #if winner > 5:
-                #break      
-            if 'tina' not in item[0] and 'fey' not in item[0] and 'amy' not in item[0]:      
-                if item[0][0].lower() in map(lambda x: x.lower(), names.words()) and item[0][1].lower() in map(lambda x: x.lower(), names.words()):
-                    if len(item[0]) < 3 or item[0][2].lower() in map(lambda x: x.lower(), names.words()):
-                        winners.append(' '.join(word for word in item[0]))
-                        print item
-                        winner = winner + 1
-    return winners
 
 def get_winners(year):
     #pn_count_vec = [["none", 0]]
-    winners = []
+    winners_old = []
     db = db2013
     events = []
 
-    for event_index in get_event_indicies(get_tpm_arr((db))):
-        pn_count_vec = []
-        #for n in range(500):
-            #for s in db[event_index + n]:
-                #if re.search(r'win(s)?(ner)?', s['text']):
-                    #for w in bigrams([w.lower() for w in word_tokenize(s['text']) if w.isalnum()]):
-                        #return
-        bigram = [proper for n in range(500) for proper in strip_propers(normalize_str(db[event_index+n]['text']).split()) if re.search(r'win(s)?(ner)?', db[event_index+n]['text'], re.IGNORECASE) and re.search(r'best', db[event_index+n]['text'], re.IGNORECASE)]
+    propers = []
 
-    #bigram = [w for s in db if re.search(r'win(s)?(ner)?', s['text'], re.IGNORECASE) and re.search(r'best', s['text'], re.IGNORECASE) for w in bigrams([w for w in word_tokenize(s['text'])]) if w[0][0].isupper() and w[1][0].isupper()]
-        #trigram = [w for n in range(300) for s in sent_tokenize(db[event_index + n]['text']) if re.search(r'win(s)?(ner)?', s, re.IGNORECASE) and re.search(r'best', s, re.IGNORECASE) for w in trigrams([w.lower() for w in word_tokenize(s) if w.isalnum()])]
-    #trigram = [w for s in db if re.search(r'win(s)?(ner)?', s['text'], re.IGNORECASE) and re.search(r'best', s['text'], re.IGNORECASE) for w in trigrams([w for w in word_tokenize(s['text'])]) if w[0][0].isupper() and w[1][0].isupper() and w[2][0].isupper()]
-        name = bigram #+ trigram
-        pn_count_vec = FreqDist(name)
-        events.append(pn_count_vec)
+    for e in db:      
+        if re.search(r'win(s)?(ner)?', e['text'], re.IGNORECASE) and re.search(r'best', e['text'], re.IGNORECASE):
+            for proper in strip_propers(normalize_str(e['text']).split()):
+                propers.append(proper)
+
+    freq = FreqDist(propers)
+    events.append(freq)
+
+    winners_names = Counter()
+    for p in events[0].most_common(1000):
+        item_split = p[0].split(" ")
+        new_string = ''
+        for cur in item_split:
+            if cur in names.words():
+                new_string = new_string + cur + ' '
+        if new_string != '':
+            if new_string not in winners_names.keys():
+                winners_names[new_string] = 0
+            winners_names[new_string] += p[1]
 
     for e in events:
-        winner = 0
-        print e.most_common(100)
-        for item in e.most_common(100):
+        presenter = 0
+        for item in e.most_common(300):
             #print item
-            #if winner > 5:
-                #break      
-            #if 'tina' not in item[0] and 'fey' not in item[0] and 'amy' not in item[0]:      
-                #if item[0][0].lower() in map(lambda x: x.lower(), names.words()) and item[0][1].lower() in map(lambda x: x.lower(), names.words()):
-                    #if len(item[0]) < 3 or item[0][2].lower() in map(lambda x: x.lower(), names.words()):
-            for w in item[1]:
-                if not w[0].isupper():
-                    continue
-            winners.append(' '.join(word for word in item[0]))
-            print item
-            winner = winner + 1
-    return winners
+            #if presenter > 1:
+                #break  
+            item_split = item[0].split(" ")   
+            print item_split            
+            if '\'' in item[0] or '\"' in item[0]:
+                winners_old.append(item[0])
+                add = True
+                for cur in winners_old:
+                    for spl in item_split:
+                        if spl in cur:
+                            add = False
+                if add:
+                    winners_old.append(item[0])
+                    presenter = presenter + 1
+    for item in winners_names.most_common(40):
+        print item
+        if 'tina' not in item[0] and 'fey' not in item[0] and 'amy' not in item[0]:
+            winners_old.append(item[0])  
+    #winners = []          
+    #for winner in winners_old:
+        #winner_split = winner.split(' ')
+        #for win in winner_split:    
+            #if win not in winners
+
+    return winners_old
 
 def get_presenters(year):
     '''Presenters is a dictionary with the hard coded award
@@ -358,19 +409,148 @@ def main():
     and then run gg_api.main(). This is the second thing the TA will
     run when grading. Do NOT change the name of this function or
     what it returns.'''
+    db = db2013
     # Your code here
     #events = get_pn_vec_from_range(db2013)
     #for e in events:
         #print e.most_common(50)
     #print get_hosts('2013')
     #print get_presenters('2013')
-    print get_winners('2013')
-    #for e in db2013:
-        #if "Bradley" in e['text'] or "Cooper" in e['text']:
-        #if re.search(r'win(s)?(ner)?', e['text']):
-        #if 'present' in e['text']:
-            #print e['text']
+    #print get_winners('2013')
+    print get_awards('2013')
     return
 
 if __name__ == '__main__':
     main()
+
+
+
+def get_winnersa(year):
+    '''Winners is a dictionary with the hard coded award
+    names as keys, and each entry containing a single string.
+    Do NOT change the name of this function or what it returns.'''
+    # Your code here
+    #db = 'db' + year
+    db = db2013
+    events = []
+    winners = []
+
+
+    #for event_index in get_event_indicies(get_tpm_arr((db))):
+        #pn_count_vec = []
+        #for n in range(500):
+            #for s in db[event_index + n]:
+                #if re.search(r'win(s)?(ner)?', s['text']):
+                    #for w in bigrams([w.lower() for w in word_tokenize(s['text']) if w.isalnum()]):
+                        #return
+        #bigram = [w for n in range(300) for s in sent_tokenize(db[event_index + n]['text']) if re.search(r'win(s)?(ner)?', s, re.IGNORECASE) and re.search(r'best', s, re.IGNORECASE) for w in bigrams([w.lower() for w in word_tokenize(s) if w.isalnum()])]
+    bigram = [w for s in db if re.search(r'win(s)?(ner)?', s['text'], re.IGNORECASE) and re.search(r'best', s['text'], re.IGNORECASE) for w in bigrams([w for w in word_tokenize(s['text'])]) if w[0][0].isupper() and w[1][0].isupper()]
+        #trigram = [w for n in range(300) for s in sent_tokenize(db[event_index + n]['text']) if re.search(r'win(s)?(ner)?', s, re.IGNORECASE) and re.search(r'best', s, re.IGNORECASE) for w in trigrams([w.lower() for w in word_tokenize(s) if w.isalnum()])]
+    trigram = [w for s in db if re.search(r'win(s)?(ner)?', s['text'], re.IGNORECASE) and re.search(r'best', s['text'], re.IGNORECASE) for w in trigrams([w for w in word_tokenize(s['text'])]) if w[0][0].isupper() and w[1][0].isupper() and w[2][0].isupper()]
+    name = bigram + trigram
+    pn_count_vec = FreqDist(name)
+    events.append(pn_count_vec)
+
+    for e in events:
+        winner = 0
+        for item in e.most_common(1000):
+            print item
+            #print item
+            #if winner > 5:
+                #break      
+            if 'tina' not in item[0] and 'fey' not in item[0] and 'amy' not in item[0]:      
+                if item[0][0].lower() in map(lambda x: x.lower(), names.words()) and item[0][1].lower() in map(lambda x: x.lower(), names.words()):
+                    if len(item[0]) < 3 or item[0][2].lower() in map(lambda x: x.lower(), names.words()):
+                        winners.append(' '.join(word for word in item[0]))
+                        print item
+                        winner = winner + 1
+    return winners
+
+def get_winnersa(year):
+    #pn_count_vec = [["none", 0]]
+    winners = []
+    db = db2013
+    events = []
+
+    #for event_index in get_event_indicies(get_tpm_arr((db))):
+        #pn_count_vec = []
+        #for n in range(500):
+            #for s in db[event_index + n]:
+                #if re.search(r'win(s)?(ner)?', s['text']):
+                    #for w in bigrams([w.lower() for w in word_tokenize(s['text']) if w.isalnum()]):
+                        #return
+        #bigram = [proper for n in range(500) for proper in strip_propers(normalize_str(db[event_index+n]['text']).split()) if re.search(r'win(s)?(ner)?', db[event_index+n]['text'], re.IGNORECASE) and re.search(r'best', db[event_index+n]['text'], re.IGNORECASE)]
+        #bigram = [proper for n in range(500) for proper in strip_propers(normalize_str(db[event_index+n]['text']).split()) if re.search(r'best', db[event_index+n]['text'], re.IGNORECASE)]        
+    #pn_count_vec = [["none", 0]]
+    winners = []
+    db = db2013
+    events = []
+
+    for event_index in get_event_indicies(get_tpm_arr((db))):
+        pn_count_vec = []
+        #for n in range(500):
+            #for s in db[event_index + n]:
+                #if re.search(r'win(s)?(ner)?', s['text']):
+                    #for w in bigrams([w.lower() for w in word_tokenize(s['text']) if w.isalnum()]):
+                        #return
+        #bigram = [proper for n in range(500) for proper in strip_propers(normalize_str(db[event_index+n]['text']).split()) if re.search(r'win(s)?(ner)?', db[event_index+n]['text'], re.IGNORECASE) and re.search(r'best', db[event_index+n]['text'], re.IGNORECASE)]
+    bigram = [proper for e in db for proper in strip_propers(normalize_str(e['text']).split()) if re.search(r'best', db[event_index+n]['text'], re.IGNORECASE)]        
+
+    #bigram = [w for s in db if re.search(r'win(s)?(ner)?', s['text'], re.IGNORECASE) and re.search(r'best', s['text'], re.IGNORECASE) for w in bigrams([w for w in word_tokenize(s['text'])]) if w[0][0].isupper() and w[1][0].isupper()]
+        #trigram = [w for n in range(300) for s in sent_tokenize(db[event_index + n]['text']) if re.search(r'win(s)?(ner)?', s, re.IGNORECASE) and re.search(r'best', s, re.IGNORECASE) for w in trigrams([w.lower() for w in word_tokenize(s) if w.isalnum()])]
+    #trigram = [w for s in db if re.search(r'win(s)?(ner)?', s['text'], re.IGNORECASE) and re.search(r'best', s['text'], re.IGNORECASE) for w in trigrams([w for w in word_tokenize(s['text'])]) if w[0][0].isupper() and w[1][0].isupper() and w[2][0].isupper()]
+    name = bigram #+ trigram
+    pn_count_vec = FreqDist(name)
+    events.append(pn_count_vec)
+
+    for e in events:
+        winner = 0
+        print e.most_common(100)
+        for item in e.most_common(100):
+            #print item
+            #if winner > 5:
+                #break      
+            #if 'tina' not in item[0] and 'fey' not in item[0] and 'amy' not in item[0]:      
+                #if item[0][0].lower() in map(lambda x: x.lower(), names.words()) and item[0][1].lower() in map(lambda x: x.lower(), names.words()):
+                    #if len(item[0]) < 3 or item[0][2].lower() in map(lambda x: x.lower(), names.words()):
+            skip = False
+            for w in word_tokenize(item[0]):
+                print w
+                print w[0]
+                if not w[0].isupper():
+                    skip = True
+            if not skip:
+                winners.append(' '.join(word for word in item[0]))
+                print item
+                winner = winner + 1
+    return winners
+
+
+    #bigram = [w for s in db if re.search(r'win(s)?(ner)?', s['text'], re.IGNORECASE) and re.search(r'best', s['text'], re.IGNORECASE) for w in bigrams([w for w in word_tokenize(s['text'])]) if w[0][0].isupper() and w[1][0].isupper()]
+        #trigram = [w for n in range(300) for s in sent_tokenize(db[event_index + n]['text']) if re.search(r'win(s)?(ner)?', s, re.IGNORECASE) and re.search(r'best', s, re.IGNORECASE) for w in trigrams([w.lower() for w in word_tokenize(s) if w.isalnum()])]
+    #trigram = [w for s in db if re.search(r'win(s)?(ner)?', s['text'], re.IGNORECASE) and re.search(r'best', s['text'], re.IGNORECASE) for w in trigrams([w for w in word_tokenize(s['text'])]) if w[0][0].isupper() and w[1][0].isupper() and w[2][0].isupper()]
+    name = bigram #+ trigram
+    pn_count_vec = FreqDist(name)
+    events.append(pn_count_vec)
+
+    for e in events:
+        winner = 0
+        print e.most_common(100)
+        for item in e.most_common(100):
+            #print item
+            #if winner > 5:
+                #break      
+            #if 'tina' not in item[0] and 'fey' not in item[0] and 'amy' not in item[0]:      
+                #if item[0][0].lower() in map(lambda x: x.lower(), names.words()) and item[0][1].lower() in map(lambda x: x.lower(), names.words()):
+                    #if len(item[0]) < 3 or item[0][2].lower() in map(lambda x: x.lower(), names.words()):
+            skip = False
+            for w in word_tokenize(item[0]):
+                print w
+                print w[0]
+                if not w[0].isupper():
+                    skip = True
+            if not skip:
+                winners.append(' '.join(word for word in item[0]))
+                print item
+                winner = winner + 1
+    return winners
