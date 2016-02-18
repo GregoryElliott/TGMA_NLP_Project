@@ -12,7 +12,7 @@ from nltk.tokenize import *
 import re
 import string
 
-IGNORE_WORDS = ['best', 'congrats', 'congratulations', 'globe', 'i\'m', 'motion', 'picture', 'actor', 'actress', 'drama', 'comedy', 'rt', 'demille', 'award']
+IGNORE_WORDS = ['best', 'television', 'musical', 'globes', 'congrats', 'congratulations', 'globe', 'i\'m', 'motion', 'picture', 'actor', 'actress', 'drama', 'comedy', 'rt', 'demille', 'award']
     
 OFFICIAL_AWARDS = [
     'cecil b. demille award',
@@ -58,13 +58,13 @@ REGEX_AWARDS = {
 'best television series - drama': re.compile(r'best ((television)|(TV))( series)?(,)?(:)?( )?(-)? drama', re.IGNORECASE),
 'best television series - comedy or musical': re.compile(r'best ((television)|(TV))( series)?(,)?(:)?( )?(-)? comedy', re.IGNORECASE),
 'best mini-series or motion picture made for television': re.compile(r'best ((((TV)|(television)) ((mini-series)|(miniseries)|(miniseries or motion picture)|(mini-series or motion picture)|(motion picture)))|(((mini-series)|(miniseries)|(miniseries or motion picture)|(mini-series or motion picture)|(motion picture))( made for)? ((television)|(TV))))', re.IGNORECASE),
-'best performance by an actress in a mini-series or motion picture made for television': re.compile(r'best( performance)?( by an)? actress( in a)? ((mini-series)|(miniseries)|(miniseries or motion picture)|(mini-series or motion picture)|(motion picture))( made for)? ((television)|(TV))', re.IGNORECASE),
-'best performance by an actor in a mini-series or motion picture made for television': re.compile(r'best( performance)?( by an)? actor( in a)? ((mini-series)|(miniseries)|(miniseries or motion picture)|(mini-series or motion picture)|(motion picture))( made for)? ((television)|(TV))', re.IGNORECASE),
+'best performance by an actress in a mini-series or motion picture made for television': re.compile(r'best( performance)?( by an)? actress( in)?( a)? ((mini-series)|(miniseries)|(miniseries or motion picture)|(mini-series or motion picture)|(motion picture))( made for)?((/)|( ))?(or )?((television)|(TV))', re.IGNORECASE),
+'best performance by an actor in a mini-series or motion picture made for television': re.compile(r'Best( performance)?( by an)? actor( in)?( a)? ((mini-series)|(miniseries)|(miniseries or motion picture)|(mini-series or motion picture)|(motion picture))( made for)?((/)|( ))?( or)?((television)|(TV))', re.IGNORECASE),
 'best performance by an actress in a television series - drama': re.compile(r'best( performance)?( by an)? actress( in a)? ((television)|(TV))( series)?(,)?(:)?( )?(-)? drama', re.IGNORECASE),
 'best performance by an actor in a television series - drama': re.compile(r'best( performance)?( by an)? actor( in a)? ((television)|(TV))( series)?(,)?(:)?( )?(-)? drama', re.IGNORECASE),
 'best performance by an actress in a television series - comedy or musical': re.compile(r'best( performance)?( by an)? actress( in a)? ((television)|(TV))( series)?(,)?(:)?( )?(-)? comedy', re.IGNORECASE),
 'best performance by an actor in a television series - comedy or musical': re.compile(r'best( performance)?( by an)? actor( in a)? ((television)|(TV))( series)?(,)?(:)?( )?(-)? comedy', re.IGNORECASE),
-'best performance by an actress in a supporting role in a series, mini-series or motion picture made for television': re.compile(r'', re.IGNORECASE),
+'best performance by an actress in a supporting role in a series, mini-series or motion picture made for television': re.compile(r'best( supporting)?( performance by an)? actress( in a)?( supporting)?( role)?( in a)?(,)?(:)?( )?(-)?( motion picture)?( series)?( mini-series)?( for)?((television)|(TV))', re.IGNORECASE),
 'best performance by an actor in a supporting role in a series, mini-series or motion picture made for television': re.compile(r'best( supporting)?( performance by an)? actor( in a)?( supporting)?( role)?( in a)?(,)?(:)?( )?(-)?( motion picture)?( series)?( mini-series)?( for)?((television)|(TV))', re.IGNORECASE)}
 
 #### ---------------------- Internal Functions ------------------------- ####
@@ -121,28 +121,37 @@ def strip_propers(s):
     '''Returns a list proper nouns from a list-of Tokens'''
     proper_nouns = []
     noun_group = ""
+    quotes = False
     for token in s:
-        if (token[0].isupper()) or token[0] == '\'' or token[0] == '\"':
+        if token in IGNORE_WORDS:
+            if(noun_group == ""): continue
+            else:
+                proper_nouns.append(noun_group.replace('\'','\"'))
+                noun_group = ""
+        if (token[0].isupper()) or token[0] == '\'' or token[0] == '\"' or quotes:
             noun_group += token + " "
             if token[0] == '\'' or token[0] == '\"':
+                quotes = True
                 if noun_group == "":
-                    noun_group = token
+                    noun_group = token + " "
                 else:
-                    proper_nouns.append(noun_group)
-                    noun_group = token
+                    proper_nouns.append(noun_group.replace('\'','\"'))
+                    noun_group = token + " "
             if token[len(token) - 1] == '\'' or token[len(token) - 1] == '\"':
                 proper_nouns.append(noun_group)
                 noun_group = ""
+                quotes = False
             for punct in [',','.',':','!',';','/']:      
                 if punct in noun_group:
                     noun_group = noun_group.replace(punct, "")
-                    noun_group = noun_group.strip(' ')
-                    proper_nouns.append(noun_group)
+                    proper_nouns.append(noun_group.replace('\'','\"'))
                     noun_group = ""
+            #if '-' in noun_group:
+                #noun_group = noun_group.replace('-', ' ')
         else:
             if(noun_group == ""): continue
             else:
-                proper_nouns.append(noun_group)
+                proper_nouns.append(noun_group.replace('\'','\"'))
                 noun_group = ""
     if(noun_group != ""): proper_nouns.append(noun_group)
     return proper_nouns
@@ -342,7 +351,7 @@ def get_awards(year):
         freq = FreqDist(events[i])
         event_freq[i] = freq
 
-    winners_names = Counter()
+    winners_names = Counter() 
     for i in event_freq:
         for p in event_freq[i].most_common(15):
             if "Best" not in p[0]:
@@ -447,7 +456,19 @@ def get_winners(year):
         print award
         award_str = []
         for f in db:
-            count = 0
+            #if 'life of pi' in f['text'].lower():
+                #print f['text']
+            #if 'mini-series' in f['text'] or 'miniseries' in f['text']:
+                #if 'television' in f['text'] or 'TV' in f['text']:
+                    #if 'actor' in f['text']:
+                        #print f['text']
+                        #print re.search(reg['best performance by an actor in a mini-series or motion picture made for television'],e.lower())
+
+            #if 'best performance by an actress in a mini-series or motion picture made for television' in award:
+                #print f['text']
+                #print reg[award]
+                #print re.match(reg[award],e.lower())
+            #count = 0
             #if "RT" not in f['text']:
                 #continue
             #for a in award.split(" "):        
@@ -490,30 +511,36 @@ def get_winners(year):
                 #if 'mini-series' in award:
                     #if 'comedy' in e.lower() or 'drama' in e.lower():
                         #continue
-            if re.match(reg[award],e.lower()):
+            if re.search(reg[award],e.lower()):
                 for proper in strip_propers(normalize_str(e).split()):
+                    #if 'best performance by an actor in a mini-series or motion picture made for television' in award:
+                        #print proper
                     #propers.append(proper)
-                    winners_list[award].append(proper.lower().strip(' '))
+                    winners_list[award].append(proper.lower().replace('\'','\"').strip(' '))
                 continue
-    print 'done processing'
+    #print 'done processing'
     #for h in winners_freq:
         #temp = winners_freq[h].most_common(100)
         #for win in temp:
             #for variation in get_variations(win[0]):
 
     for a in winners_list:
-        print a
         freq = FreqDist(winners_list[a])
         winners_freq[a] = freq
-        winners[a] = []
+        #winners[a] = [] 
     #for a in winners_freq:
         #print winners_freq[a]
     
     for h in winners_freq:
+        done = False
         print h
         for win in winners_freq[h].most_common(25):
+            if done:
+                break
             stop = False
-            for a in h.split(' '):              
+            for a in h.split(' '):   
+                if done:
+                    break           
                 if "the" in win[0].lower():
                     break
                 if a.lower() in win[0].lower():
@@ -538,15 +565,16 @@ def get_winners(year):
                         break
                 if stop:
                     break   
-                winners[h].append(win)#win[0].strip('\'').strip('\"'))
+                winners[h] = win.strip("\"") #win[0].strip('\'').strip('\"'))
+                done = True
                 #continue
                 break
-    for win in winners:
+    #for win in winners:
         #for w in winners[win[:
             #winners[win][w] = winners[win][w].translate(winners[win][w].maketrans("",""), string.punctuation)
-        print ''
-        print win
-        print winners[win]
+        #print ''
+        #print win
+        #print winners[win]
 
     return winners
 
