@@ -22,13 +22,14 @@ OFFICIAL_AWARDS = [
     'best performance by an actress in a motion picture - drama',
     'best performance by an actor in a motion picture - drama',
     'best motion picture - comedy or musical',
-    'best performance by an actress in a motion picture - comedy or musical',
-    'best performance by an actor in a motion picture - comedy or musical',
+    'best performance by an actress in a motion picture - comedy or musical', #Y
+    'best performance by an actor in a motion picture - comedy or musical',   #Y
     'best animated feature film', 'best foreign language film',
     'best performance by an actress in a supporting role in a motion picture',
     'best performance by an actor in a supporting role in a motion picture',
     'best director - motion picture', 'best screenplay - motion picture',
-    'best original score - motion picture', 'best original song - motion picture',
+    'best original score - motion picture', #Y
+    'best original song - motion picture', #Y
     'best television series - drama',
     'best performance by an actress in a television series - drama',
     'best performance by an actor in a television series - drama',
@@ -36,9 +37,9 @@ OFFICIAL_AWARDS = [
     'best performance by an actress in a television series - comedy or musical',
     'best performance by an actor in a television series - comedy or musical',
     'best mini-series or motion picture made for television',
-    'best performance by an actress in a mini-series or motion picture made for television',
-    'best performance by an actor in a mini-series or motion picture made for television',
-    'best performance by an actress in a supporting role in a series, mini-series or motion picture made for television',
+    'best performance by an actress in a mini-series or motion picture made for television', #Y
+    'best performance by an actor in a mini-series or motion picture made for television',   #Y
+    'best performance by an actress in a supporting role in a series, mini-series or motion picture made for television', #Y
     'best performance by an actor in a supporting role in a series, mini-series or motion picture made for television']
 
 #### ---------------------- Internal Functions ------------------------- ####
@@ -161,95 +162,7 @@ def get_awards(year):
     of this function or what it returns.'''
     # Your code here
     #pn_count_vec = [["none", 0]]
-    winners_old = []
-    db = db2013
-    events = {}
-    event_freq = {}
-
-    propers = []
-    
-    for event_index in get_event_indicies(get_tpm_arr((db))):
-        for n in range(500):
-            e = db[event_index + n]
-            if re.search(r'win(s)?(ner)?', e['text'], re.IGNORECASE) and re.search(r'best', e['text'], re.IGNORECASE):
-                for proper in strip_propers(normalize_str(e['text']).split()):
-                    propers.append(proper)
-                    events[event_index] = proper
-
-    for i in events:
-        freq = FreqDist(events[i])
-        event_freq[i] = freq
-
-    winners_names = Counter()
-    for i in event_freq:
-        for p in event_freq[i].most_common(15):
-            if "Best" not in p[0]:
-                continue
-            item_split = p[0].split(" ")
-            new_string = ''
-            start = False     
-            for cur in item_split:
-                print cur
-                if start:
-                    if len(cur) == 0:
-                        continue
-                    if '!' in cur:
-                        new_string = new_string +  ' ' + cur
-                        new_string.replace("!", "")
-                        break
-                    if ':' in cur:
-                        new_string = new_string +  ' ' + cur
-                        new_string.replace(":", "")
-                        break
-                    if not cur[0].isupper() or ',' in cur or '\'s' in cur or '.' in cur or 'buy' in cur:
-                        break
-                    new_string = new_string +  ' ' + cur
-                if cur == "Best":
-                    new_string = 'Best'
-                    start = True            
-            if new_string != '':
-                new_string.replace('!', '')
-                new_string.replace(':', '')
-                if (new_string, i) not in winners_names.keys():
-                    winners_names[(new_string, i)] = 0
-                winners_names[(new_string, i)] += p[1]
-
-    for item in winners_names.most_common(50):
-        if item[0][0] != "Best" and item[0][0] != "Best Buy":
-            winners_old.append(item[0])
-        else:
-            continue            
-        stop = False
-        remove = None
-        for win in winners_old:
-            print win
-            if stop:
-                break
-            #for cur in item[0].split(" "):
-                #if "Best" in cur:
-                    #continue
-            if (len(item[0][0].split(" ")) > 1 and item[0][0].split(" ")[1] == '') or (len(item[0][0].split(" ")) > 2 and item[0][0].split(" ")[2] == ''):
-                continue
-            if (len(item[0][0].split(" ")) > 2 and item[0][0].split(" ")[1] in win[0]) or (len(item[0][0].split(" ")) > 2 and item[0][0].split(" ")[2] in win[0]):
-                if len(item[0][0]) > len(win[0]):
-                    remove = win
-                    stop = True
-                    break      
-                else:
-                    remove = item[0]
-        if remove:
-            winners_old.remove(remove) 
-
-
-        #winners_old.append(item[0])  
-    #winners = []          
-    #for winner in winners_old:
-        #winner_split = winner.split(' ')
-        #for win in winner_split:    
-            #if win not in winners
-
-    return winners_old
-
+    awards = p_most_common()
     return awards
 
 def get_nominees(year):
@@ -593,93 +506,3 @@ def get_winnersa(year):
     return winners
 
 
-def get_awardsa(year):
-    '''Awards is a list of strings. Do NOT change the name
-    of this function or what it returns.'''
-    # Your code here
-    #pn_count_vec = [["none", 0]]
-    winners_old = []
-    db = db2013
-    #events = {}
-    events = []
-
-    propers = []
-    
-    for e in db:
-        if re.search(r'win(s)?(ner)?', e['text'], re.IGNORECASE) and re.search(r'best', e['text'], re.IGNORECASE):
-            for proper in strip_propers(normalize_str(e['text']).split()):
-                propers.append(proper)
-
-    freq = FreqDist(propers)
-    events.append(freq)
-
-    winners_names = Counter()
-    for p in events[0].most_common(1000):
-        if "Best" not in p[0]:
-            continue
-        item_split = p[0].split(" ")
-        new_string = ''
-        start = False     
-        for cur in item_split:
-            print cur
-            if start:
-                if len(cur) == 0:
-                    continue
-                if '!' in cur:
-                    new_string = new_string +  ' ' + cur
-                    new_string.replace("!", "")
-                    break
-                if ':' in cur:
-                    new_string = new_string +  ' ' + cur
-                    new_string.replace(":", "")
-                    break
-                if not cur[0].isupper() or ',' in cur or '\'s' in cur or '.' in cur or 'buy' in cur:
-                    break
-                new_string = new_string +  ' ' + cur
-            if cur == "Best":
-                new_string = 'Best'
-                start = True            
-        if new_string != '':
-            new_string.replace('!', '')
-            new_string.replace(':', '')
-            if new_string not in winners_names.keys():
-                winners_names[new_string] = 0
-            winners_names[new_string] += p[1]
-
-    for item in winners_names.most_common(50):
-        if item[0] != "Best" and item[0] != "Best Buy":
-            winners_old.append(item[0])
-        else:
-            continue            
-        stop = False
-        remove = None
-        for win in winners_old:
-            print win
-            if stop:
-                break
-            #for cur in item[0].split(" "):
-                #if "Best" in cur:
-                    #continue
-            if (len(item[0].split(" ")) > 1 and item[0].split(" ")[1] == '') or (len(item[0].split(" ")) > 2 and item[0].split(" ")[2] == ''):
-                continue
-            if (len(item[0].split(" ")) > 2 and item[0].split(" ")[1] in win) or (len(item[0].split(" ")) > 2 and item[0].split(" ")[2] in win):
-                if len(item[0]) > len(win):
-                    remove = win
-                    stop = True
-                    break      
-                else:
-                    remove = item[0]
-        if remove:
-            winners_old.remove(remove) 
-
-
-        #winners_old.append(item[0])  
-    #winners = []          
-    #for winner in winners_old:
-        #winner_split = winner.split(' ')
-        #for win in winner_split:    
-            #if win not in winners
-
-    return winners_old
-
-    return awards

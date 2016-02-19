@@ -139,19 +139,13 @@ def remove_similar(vec):
                 award[1] = 0
                 break
 
-def remove_similar_B(vec):
-    ittr = 1
-    for award in vec:
-        ittr +=1
-        for n in range(ittr,len(vec)):
-            n_award = vec[n]
-            if n_award[1] == 0: continue
-            if(len(n_award) < len(award)): continue 
-            if difflib.SequenceMatcher(None, award[0], n_award[0]).ratio() >= 0.60:
-                n_award[1] += award[1]
-                award[1] = 0
-                
+def collapse_adjacent(v_awards):
+    return -1
+    
+
+    
 def p_most_common():
+    stripped_vec = []
     for n in range(0,NUM_EVENTS-1):
         most_common = most_common_match(db2013, n, 1300)
         if most_common: EVENTS_AWARDS.append(most_common)
@@ -159,5 +153,7 @@ def p_most_common():
     for award in EVENTS_AWARDS:
         c_string = award[0].split()
         c_string[len(c_string)-1]
-        if award[1] > 20 and c_string[len(c_string)-1][0].isupper(): #ensure ending on caps
-            print award
+        if award[1] > 0 and c_string[len(c_string)-1][0].isupper(): #ensure ending on caps
+            print award[0]
+            stripped_vec.append(award[0])
+    return stripped_vec

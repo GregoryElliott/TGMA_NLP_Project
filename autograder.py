@@ -1,4 +1,4 @@
-'''Version 0.20'''
+'''Version 0.31'''
 import sys
 import json
 import difflib
@@ -44,7 +44,7 @@ def text(result, answer):
     return textscore
 
 
-def spell_check(r, a, s, weight=1):
+def spell_check(r, a, s, scores, weight=1):
     change = weight*(1-(edit_distance(r, a)/float(max(len(r), len(a)))))
     if s in scores:
         # penalty for returning multiple of the same result when
@@ -120,11 +120,45 @@ def calc_translation(result, answer):
     return sum(scores.values()), translation
 
 
+def calc_score(result, answer):
+    result = set(result)
+    intersection = result.intersection(answer)
+    len_intersection = len(intersection)
+    len_union = len(result.union(answer))
+    len_result = len(result)
+    len_answer = len(answer)
+
+    if len_union == 0:
+        return 0
+    elif len_result == len_answer and len_intersection == len_answer:
+        m = 1.0
+    elif len_intersection == len_result:
+        # all results correspond to a correct answer, but some 
+        # answers are missing
+        m = 0.95
+    elif len_intersection == len_answer:
+        # all answers correspond to a result, but there are
+        # some extra results as well
+        m = 0.9
+    elif len_intersection > 0:
+        # there is some post-translation intersection between
+        # results and answers.
+        m = 0.85
+    else:
+        return 0
+
+    return (len_intersection / float(len_union)) * m
+
+
 def score_structured(year, answers, info_type):
     # c_score is the completeness score
     spelling_score = 0
     c_score = 0
-    results = get_attr(gg_api, 'get_%s' % info_type)(year)
+    results = getattr(gg_api, 'get_%s' % info_type)(year)
+
+    if info_type == "nominees":
+        del answers['award_data']['cecil b. demille award']
+        del results['cecil b. demille award']
 
     for a in answers['award_data']:
         temp_spelling, translation = calc_translation(results[a], answers['award_data'][a][info_type])
@@ -135,7 +169,7 @@ def score_structured(year, answers, info_type):
 
 
 def score_unstructured(year, answers, info_type):
-    results = get_attr(gg_api, 'get_%s' % info_type)(year)
+    results = getattr(gg_api, 'get_%s' % info_type)(year)
     spelling_score, translation = calc_translation(results, answers[info_type])
     c_score = calc_score([translation[res] if res in translation else res for res in results], answers[info_type])
 
@@ -143,7 +177,8 @@ def score_unstructured(year, answers, info_type):
 
 
 def main(years, grading):
-    scores = {y: {g: 0 for g in grading} for y in years}
+    types = ['spelling', 'completeness']
+    scores = {y: {g: {t:0 for t in types} for g in grading} for y in years}
     for y in years:
         with open('gg%sanswers.json' % y, 'r') as f:
             answers = json.load(f)
@@ -162,7 +197,7 @@ def main(years, grading):
 
 if __name__ == '__main__':
     years = ['2013', '2015']
-    grading = ["hosts", "awards", "nominees", "presenters", "winners"]
+    grading = ["hosts", "awards", "nominees", "presenters", "winner"]
 
     if len(sys.argv) > 1:
         if '2013' in sys.argv:
