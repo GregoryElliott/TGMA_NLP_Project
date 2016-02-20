@@ -9,9 +9,8 @@ from nltk import bigrams
 from nltk import trigrams
 from nltk.tokenize import *
 import re
+import json
 
-# Not if this is how you file dependencies in python...
-from constants import *
 from awards_parse import *
 from events import *
 
@@ -44,6 +43,18 @@ OFFICIAL_AWARDS = [
 
 #### ---------------------- Internal Functions ------------------------- ####
 
+
+with open('gg2013.json') as data_2013:
+    db2013 = json.load(data_2013)
+    db2013 = sorted(db2013, key=lambda x:
+                    [time.gmtime(int(x["timestamp_ms"])/1000)[3],
+                     time.gmtime(int(x["timestamp_ms"])/1000)[4]])
+    
+with open('gg2015.json') as data_2015:
+    db2015 = json.load(data_2015)
+    db2015 = sorted(db2015, key=lambda x:
+                    [time.gmtime(int(x["timestamp_ms"])/1000)[3],
+                     time.gmtime(int(x["timestamp_ms"])/1000)[4]])
 
 
 def normalize_str(s):
@@ -359,7 +370,7 @@ def main():
     and then run gg_api.main(). This is the second thing the TA will
     run when grading. Do NOT change the name of this function or
     what it returns.'''
-    db = db2013
+   # db = db2013
     # Your code here
     #events = get_pn_vec_from_range(db2013)
     #for e in events:
@@ -367,7 +378,7 @@ def main():
     #print get_hosts('2013')
     #print get_presenters('2013')
     #print get_winners('2013')
-    print get_awards('2013')
+   # print get_awards('2013')
     return
 
 if __name__ == '__main__':

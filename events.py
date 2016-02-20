@@ -1,12 +1,13 @@
 ## EVENTS
-import constants
 import time
+
+TPM_THRESHOLD = 800
 
 def get_time(db, i):
     '''Returns a list of [Hour, Minutes] for a tweet at index i in db'''
     def get_hour_minutes(time):
         return [time[3], time[4]]
-    return get_hour_minutes(time.gmtime(db[i]["timestamp_ms"]/1000))
+    return get_hour_minutes(time.gmtime(int(db[i]["timestamp_ms"])/1000))
 
 
 def get_tpm_arr(db):
@@ -30,6 +31,6 @@ def get_event_indicies(tpm_arr):
     lst = []
     for r in tpm_arr:
         for n in r:
-            if n[0] >= constants.TPM_THRESHOLD:
+            if n[0] >= TPM_THRESHOLD:
                 lst.append(n[1])
     return lst
