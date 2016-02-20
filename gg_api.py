@@ -687,8 +687,19 @@ def pre_ceremony():
     plain text file. It is the first thing the TA will run when grading.
     Do NOT change the name of this function or what it returns.'''
     # Your code here
+    events = get_pn_vec_from_range(db2013)
+    uselesswords = []
+    words = []
+    for event in events:
+        words = event.items()
+        words
+        for word in words:
+            if word[1] > 1:
+                words.remove(word)
+        uselesswords.append(words)
+        words = []
     print "Pre-ceremony processing complete."
-    return
+    return uselesswords
 
 def main():
     '''This function calls your program. Typing "python gg_api.py"
