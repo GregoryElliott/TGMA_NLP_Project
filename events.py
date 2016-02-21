@@ -1,7 +1,8 @@
-## EVENTS
+# EVENTS
 import time
 
-TPM_THRESHOLD = 800
+TPM_THRESHOLD = 500
+
 
 def get_time(db, i):
     '''Returns a list of [Hour, Minutes] for a tweet at index i in db'''
@@ -10,13 +11,20 @@ def get_time(db, i):
     return get_hour_minutes(time.gmtime(int(db[i]["timestamp_ms"])/1000))
 
 
+def cnv_time(int):
+    '''Returns a list of [Hour, Minutes] for a tweet at index i in db'''
+    def get_hour_minutes(time):
+        return [time[3], time[4]]
+    return get_hour_minutes(time.gmtime(int/1000))
+
+
 def get_tpm_arr(db):
     '''Returns a TPM (Tweet-per-minute) array for the given db'''
-    dim = get_time(db, len(db)-1)
+    dim = db[len(db)-1][1]
     freq_table = [[[0,0] for i in range(60)] for j in range(dim[0]+1)]
     ittr = 0
     for n in db:
-        curr_time = get_time(db, ittr)
+        curr_time = n[1]
         # Either create a new entry or increment old one
         if (freq_table[curr_time[0]][curr_time[1]] == [0,0]):
             freq_table[curr_time[0]][curr_time[1]] = [1, ittr]

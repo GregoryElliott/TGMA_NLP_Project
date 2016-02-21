@@ -4,9 +4,9 @@
 ### Awards Parsing
 ###
 ########################################################################
-import nltk
+#import nltk
 import re
-from nltk.corpus import words
+#from nltk.corpus import words
 import difflib
 ### local
 from events import *
@@ -14,17 +14,83 @@ from word_vector import *
 import itertools
 #### TMP
 import json
-with open('gg2013.json') as data_2013:
-    db2013 = json.load(data_2013)
-    db2013 = sorted(db2013, key=lambda x: int(x['timestamp_ms']), reverse=False)
+db2013 = {}
 
-with open('gg2015.json') as data_2015:
-    db2015 = json.load(data_2015)
-    db2015 = sorted(db2015, key=lambda x: (int(x['timestamp_ms'])), reverse=False)
+
+import pickle
+import os.path
+
+
+def check_retweet(string):
+    if string.find("RT ") != -1:
+        return True
+    return False
+
+
+def check_best(string):
+    if string.find("Best") != -1:
+        return True
+    return False
+
+def dump_obj():
+    with open('gg2013.json') as data_2013:
+        db2013 = json.load(data_2013)
+        data_2013.close()
+        db_sorted = sorted([[tweet['text'],cnv_time(int(tweet['timestamp_ms']))]
+                             for tweet in db2013
+                             if not check_retweet(tweet['text'])], key=lambda x:x[1])
+                          #   and check_best(tweet['text'])], key=lambda x:x[1])
+    with open('dbstore13.data', 'w') as outfile:
+        pickle.dump(db_sorted, outfile)
+    with open('gg2015.json') as data_2015:
+        db2015 = json.load(data_2015)
+        data_2015.close()
+        db_sorted = sorted([[tweet['text'],cnv_time(int(tweet['timestamp_ms']))]
+                             for tweet in db2015
+                             if not check_retweet(tweet['text'])], key=lambda x:x[1])
+                          #   and check_best(tweet['text'])], key=lambda x:x[1])
+    with open('dbstore15.data', 'w') as outfile:
+        pickle.dump(db_sorted, outfile)
+
+#if not os.path.exists('dbstore13.data') or os.path.exists('dbstore15.data'):
+ #   dump_obj()
+
+#with open('dbstore13.data') as infile:
+ #   db2013 = pickle.load(infile)
+    
+#with open('dbstore15.data') as infile:
+ #   db2015 = pickle.load(infile)
+
+
+
+#    db2015 = sorted(db2015, key=lambda x: (int(x['timestamp_ms'])), reverse=False)
  
 EVENTS_AWARDS = []
 
+#keys = {'timestamp_ms', 'text'}
+#db2015_n = {key:db2015[key] for key in keys}
+
+#newdict = {}
+#for tweet in db2015:
+ #   for f in fields:
+        
+
+#newdict = {}
+#for tweet in db2015:
+ #   newdict[tweet['text']] = int(tweet['timestamp_ms'])
+#newdict = sorted(newdict)
+
+
+
+ 
+    
+
+
+
+
 #### Awards Parsing ####
+
+        
 def check_integrity(string):
     ## Currently not using this-> massive peformance decrease
     '''Returns false if string contains spelling errors'''
@@ -94,7 +160,7 @@ def get_awards_matches(db, i, num_tweets):
         results_str = "Best "
         tweet_i = event_i + n
         tweet = ""
-        tweet = db[tweet_i]['text']
+        tweet = db[tweet_i][0]
         find_i = tweet.find("Best")
       #  find_i = re.search("best", tweet, re.IGNORECASE) #
        # if (not find_i): continue
@@ -168,6 +234,34 @@ def collapse_adjacent(v_awards):
     return -1
 
 
+
+def format_output(awards_l):
+
+    p_awards_l = []
+    for award in awards_l:
+        curr_str = award
+        act_ind = award.find("Act")
+        sup_ind = award.find("Support")
+        add_sup = False
+        if sup_ind != -1:
+                add_sup = True
+        if act_ind != -1:
+            ittr = 0 
+            for n in range(14):
+                if award[act_ind+n].isspace(): break
+                ittr +=1
+            if add_sup == True:
+                curr_str = curr_str[:(act_ind+ittr)] +' in a Supporting Role ' + curr_str[act_ind+ittr:]
+            curr_str = curr_str[:act_ind] +'Performance by an ' + curr_str[act_ind:]
+            if add_sup == True:
+                ittr=0
+                for n in range(14):
+                    if award[sup_ind+n].isspace(): break
+                    ittr +=1
+                curr_str = curr_str[:sup_ind] + curr_str[sup_ind+ittr+1:]
+        p_awards_l.append(curr_str)
+    return p_awards_l
+
 def p_most_common(db):
     EVENTS_AWARDS = []
     EVENTS = get_event_indicies(get_tpm_arr(db))
@@ -180,7 +274,7 @@ def p_most_common(db):
     for award in EVENTS_AWARDS:
         c_string = award[0].split()
         c_string[len(c_string)-1]
-        if award[1] > 0 and c_string[len(c_string)-1][0].isupper(): #ensure ending on caps
-            print award
+        if award[1] > 10 and c_string[len(c_string)-1][0].isupper(): #ensure ending on caps
+#            print award
             stripped_vec.append(award[0])
-    return stripped_vec
+    return format_output(stripped_vec)
