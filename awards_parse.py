@@ -338,12 +338,18 @@ def strip_propers_award(s):
     '''Returns a list proper nouns from a list-of Tokens'''
     proper_nouns = []
     noun_group = ""
+    curr_size =0
     for token in s:
         if (token[0].isupper()) or token[0] == '\'' or token[0] == '\"':
             noun_group += token + " "
+            curr_size += 1
             if token[len(token) - 1] == '\'' or token[len(token) - 1] == '\"':
                 proper_nouns.append(noun_group)
                 noun_group = ""
+        if(curr_size >=2):
+            proper_nouns.append(noun_group)
+            noun_group = ""
+            curr_size =0
         else:
             if(noun_group == ""): continue
             else:
@@ -389,8 +395,90 @@ def get_best_dressed(db):
           #      if tweet_text[0].isspace(): break
            #     ittr +=1
             stripped = strip_propers_award(nltk.word_tokenize(remove_award_name(tweet_text)))
-           # print stripped
-            for gram in stripped:
+            for gram in nltk.bigrams(stripped):
             #    print gram
                 bigrams_l.append(gram)
-    return nltk.FreqDist(bigrams_l).most_common(1)
+    most_freq  = nltk.FreqDist(bigrams_l).most_common(1)
+    ret_str = ""
+    for token in most_freq[0][0]:
+        ret_str += token
+    return ret_str
+
+
+def get_best_joke(db):
+    bigrams_l = []
+    def remove_award_name(string):
+        ret_str=""
+        t_l = [token for token in nltk.word_tokenize(string)]
+        for token in t_l:
+            if token.find("Red") != -1: continue
+            if token.find("See") != -1: continue
+            if token.find("Dress") != -1: continue
+            if  token.find("Best") != -1: continue
+            if token.find("dress") != -1: continue
+            if  token.find("best") != -1: continue
+            if token.find("worst") != -1: return ""
+            if  token.find("Worst") != -1: return ""
+            if token.find("Golden") != -1: continue
+            if  token.find("Globes") != -1: continue
+            if check_stopword(token): continue
+            if check_name(token): 
+                ret_str += token + " "
+        return ret_str
+    for tweet in db:
+        tweet_text = tweet[0]
+        dress_loc = tweet_text.lower().find("joke")
+        if dress_loc != -1:
+         #   ittr=0
+         #   for n in range(len(tweet_text)-dress_loc, len(tweet_text)):
+          #      if tweet_text[0].isspace(): break
+           #     ittr +=1
+            stripped = strip_propers_award(nltk.word_tokenize(remove_award_name(tweet_text)))
+            for gram in nltk.bigrams(stripped):
+            #    print gram
+                bigrams_l.append(gram)
+    most_freq  = nltk.FreqDist(bigrams_l).most_common(1)
+    ret_str = ""
+    for token in most_freq[0][0]:
+        ret_str += token
+    return ret_str
+
+
+def get_best_act(db):
+    bigrams_l = []
+    def remove_award_name(string):
+        ret_str=""
+        t_l = [token for token in nltk.word_tokenize(string)]
+        for token in t_l:
+            if token.find("Red") != -1: continue
+            if token.find("See") != -1: continue
+            if token.find("Dress") != -1: continue
+            if  token.find("Best") != -1: continue
+            if token.find("dress") != -1: continue
+            if  token.find("best") != -1: continue
+            if token.find("worst") != -1: return ""
+            if  token.find("Worst") != -1: return ""
+            if token.find("Golden") != -1: continue
+            if  token.find("Globes") != -1: continue
+            if check_stopword(token): continue
+            if check_name(token): 
+                ret_str += token + " "
+        return ret_str
+    for tweet in db:
+        tweet_text = tweet[0]
+        dress_loc = tweet_text.lower().find("joke")
+        if dress_loc != -1:
+         #   ittr=0
+         #   for n in range(len(tweet_text)-dress_loc, len(tweet_text)):
+          #      if tweet_text[0].isspace(): break
+           #     ittr +=1
+            stripped = strip_propers_award(nltk.word_tokenize(remove_award_name(tweet_text)))
+           # print stripped
+            for gram in nltk.bigrams(stripped):
+            #    print gram
+                bigrams_l.append(gram)
+    most_freq  = nltk.FreqDist(bigrams_l).most_common(1)
+    ret_str = ""
+    for token in most_freq[0][0]:
+        ret_str += token
+    return ret_str
