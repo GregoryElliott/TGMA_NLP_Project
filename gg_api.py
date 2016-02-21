@@ -2,6 +2,8 @@
 
 OFFICIAL_AWARDS = ['cecil b. demille award', 'best motion picture - drama', 'best performance by an actress in a motion picture - drama', 'best performance by an actor in a motion picture - drama', 'best motion picture - comedy or musical', 'best performance by an actress in a motion picture - comedy or musical', 'best performance by an actor in a motion picture - comedy or musical', 'best animated feature film', 'best foreign language film', 'best performance by an actress in a supporting role in a motion picture', 'best performance by an actor in a supporting role in a motion picture', 'best director - motion picture', 'best screenplay - motion picture', 'best original score - motion picture', 'best original song - motion picture', 'best television series - drama', 'best performance by an actress in a television series - drama', 'best performance by an actor in a television series - drama', 'best television series - comedy or musical', 'best performance by an actress in a television series - comedy or musical', 'best performance by an actor in a television series - comedy or musical', 'best mini-series or motion picture made for television', 'best performance by an actress in a mini-series or motion picture made for television', 'best performance by an actor in a mini-series or motion picture made for television', 'best performance by an actress in a supporting role in a series, mini-series or motion picture made for television', 'best performance by an actor in a supporting role in a series, mini-series or motion picture made for television']
 
+#best performance by an actress in a motion picture - drama
+
 import pickle
 import json
 import os.path
@@ -20,10 +22,14 @@ def get_hosts(year):
 def get_awards(year):
     '''Awards is a list of strings. Do NOT change the name
     of this function or what it returns.'''
-    with open('dbstore13.data') as infile:
-        db2013 = pickle.load(infile)
-    #return {}
-    ret_l = p_most_common(db2013)
+    if (year == '2013'):
+        with open('dbstore13.data') as infile:
+                db = pickle.load(infile)
+    else:
+        with open('dbstore15.data') as infile:
+                db = pickle.load(infile)
+
+    ret_l = p_most_common(db)
     print ret_l
     return ret_l
 

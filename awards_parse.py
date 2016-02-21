@@ -16,6 +16,7 @@ import itertools
 import json
 db2013 = {}
 
+import nltk
 
 import pickle
 import os.path
@@ -37,60 +38,54 @@ def dump_obj():
         db2013 = json.load(data_2013)
         data_2013.close()
         db_sorted = sorted([[tweet['text'],cnv_time(int(tweet['timestamp_ms']))]
-                             for tweet in db2013
-                             if not check_retweet(tweet['text'])], key=lambda x:x[1])
-                          #   and check_best(tweet['text'])], key=lambda x:x[1])
+                            for tweet in db2013
+                       #      if not check_retweet(tweet['text'])], key=lambda x:x[1])
+                            if check_best(tweet['text'])], key=lambda x:x[1])
     with open('dbstore13.data', 'w') as outfile:
         pickle.dump(db_sorted, outfile)
     with open('gg2015.json') as data_2015:
         db2015 = json.load(data_2015)
         data_2015.close()
         db_sorted = sorted([[tweet['text'],cnv_time(int(tweet['timestamp_ms']))]
-                             for tweet in db2015
-                             if not check_retweet(tweet['text'])], key=lambda x:x[1])
-                          #   and check_best(tweet['text'])], key=lambda x:x[1])
+                            for tweet in db2015
+                        #    if not check_retweet(tweet['text']) and
+                            if check_best(tweet['text'])], key=lambda x:x[1])
+    with open('dbstore15.data', 'w') as outfile:
+        pickle.dump(db_sorted, outfile)
+
+def dump_obj2():
+    with open('gg2013.json') as data_2013:
+        db2013 = json.load(data_2013)
+        data_2013.close()
+        db_sorted = sorted([[tweet['text'],cnv_time(int(tweet['timestamp_ms']))]
+                            for tweet in db2013
+                            if not check_retweet(tweet['text']) and
+                            check_best(tweet['text'])], key=lambda x:x[1])
+    with open('dbstore13.data', 'w') as outfile:
+        pickle.dump(db_sorted, outfile)
+    with open('gg2015.json') as data_2015:
+        db2015 = json.load(data_2015)
+        data_2015.close()
+        db_sorted = sorted([[tweet['text'],cnv_time(int(tweet['timestamp_ms']))]
+                            for tweet in db2015
+                            if not check_retweet(tweet['text']) and
+                            check_best(tweet['text'])], key=lambda x:x[1])
     with open('dbstore15.data', 'w') as outfile:
         pickle.dump(db_sorted, outfile)
 
 #if not os.path.exists('dbstore13.data') or os.path.exists('dbstore15.data'):
  #   dump_obj()
-
-#with open('dbstore13.data') as infile:
- #   db2013 = pickle.load(infile)
+#dump_obj()
+with open('dbstore13.data') as infile:
+    db2013 = pickle.load(infile)
     
-#with open('dbstore15.data') as infile:
- #   db2015 = pickle.load(infile)
+with open('dbstore15.data') as infile:
+    db2015 = pickle.load(infile)
 
-
-
-#    db2015 = sorted(db2015, key=lambda x: (int(x['timestamp_ms'])), reverse=False)
- 
 EVENTS_AWARDS = []
-
-#keys = {'timestamp_ms', 'text'}
-#db2015_n = {key:db2015[key] for key in keys}
-
-#newdict = {}
-#for tweet in db2015:
- #   for f in fields:
-        
-
-#newdict = {}
-#for tweet in db2015:
- #   newdict[tweet['text']] = int(tweet['timestamp_ms'])
-#newdict = sorted(newdict)
-
-
-
- 
-    
-
-
-
+DIVIDE_FACTOR = 350  #1000
 
 #### Awards Parsing ####
-
-        
 def check_integrity(string):
     ## Currently not using this-> massive peformance decrease
     '''Returns false if string contains spelling errors'''
@@ -108,8 +103,6 @@ def count_tokens(string):
 
 def get_awards_matches(db, i, num_tweets):
     '''[JSON DB] db, [U_Int] i, [U_Int] num_tweets -> List-of Matches'''
-    MIN_MATCH_THRESHOLD = 30
-    MIN_EVENTS_MATCH_THRESHOLD = 40
     WORD_GRAB_COUNT = 10
     def find_and_cut_or_add(matches_vec, string, start_i):
         # Cut the award if already in list, otherwise add it
@@ -124,7 +117,7 @@ def get_awards_matches(db, i, num_tweets):
        #         award[1] += 1
         #        return  #if we find it was the award for a previous event, dont include it
             print award[0], string
-            if difflib.SequenceMatcher(None, award[0], string).ratio() >= .6:
+            if difflib.SequenceMatcher(None, award[0], string).ratio() >= .8:
                 if len(award[0]) >= len(string):
                     award[1] += 1
                     return
@@ -148,13 +141,19 @@ def get_awards_matches(db, i, num_tweets):
     def trim_award(string):
         # Trim a string before colon
         ret_str = ""
+      #  under_fired = False
         for n in range(0, len(string)):
             if (not string[n].isalpha() and not string[n].isspace()):   # == ":" or string[n] == "-"
-                if (string[n] != ","):
+               # if (string[n] == '-'):
+              #      if under_fired:
+             #           return ret_str
+            #        else:
+           #             under_fired = True
+                if (string[n] != ","): #and string[n] != "-"):
                     return ret_str
             ret_str += string[n]
         return ret_str
-    event_i = get_event_indicies(get_tpm_arr((db)))[i]
+    event_i = get_event_indicies(get_tpm_arr(db), len(db)/DIVIDE_FACTOR)[i]
     matches = []
     for n in range(0,num_tweets):
         results_str = "Best "
@@ -179,21 +178,62 @@ def get_awards_matches(db, i, num_tweets):
                 break
             else:
                 tmp_word = word.lower()
-                if (tmp_word == "television"):
-                    results_str += "TV "
-                elif (tmp_word == "film" or tmp_word == "movie"):
+                if (tmp_word == "tv"):
+                    results_str += "Television "
+                elif (tmp_word == "film" or tmp_word == "movie" or tmp_word == "motion"):
                     results_str += "Motion Picture "
-                elif (word == "in"):
-                    results_str += ", "
-                elif (word == "a"): continue
+                elif (tmp_word == "picture"): continue
+ #               elif (tmp_word == "film" or tmp_word == "movie"):
+  #                  results_str += "Motion Picture "
+                elif (tmp_word == "in"):
+                    results_str = results_str[:-1] + ", "
+                elif (tmp_word == "foreign"):
+                    results_str += "Foreign Language "
+                elif (tmp_word == "language"): continue
+                elif (tmp_word.find("min") != -1):
+                    results_str += "Mini-Series "
+                elif (tmp_word == "comedy" or tmp_word == "musical"):
+                    j = len(results_str)-1
+                    while j >= 0:
+                        if results_str[j-1].isalpha():
+                            break
+                        j-=1
+                    results_str = results_str[:j] + ", Comedy or Musical "
+                    break
+                elif (tmp_word == "drama"):
+                    j = len(results_str)-1
+                    while j >= 0:
+                        if results_str[j-1].isalpha():
+                            break
+                        j-=1
+                    results_str = results_str[:j] + ", Drama "
+                    break
+                elif (tmp_word == "a"): continue
                 elif (tmp_word == "feature"): continue
                 else:
                     results_str += word + " "
+       # results_str = check_television(results_str)
         if (results_str != ""):
             results_str = trim_award(results_str)
             find_and_cut_or_add(matches, results_str, find_i)
     return matches
 
+def check_television(string):
+    s = nltk.word_tokenize(string)
+    istv = False
+    for word in s:
+        if word.lower() == "television":
+            istv = True
+    if(istv):
+        has_made = False
+        for word in s:
+            if word.lower() == "made":
+                has_made = True
+                print s
+        if not has_made:
+            print s
+            return " "
+    return string
 
 def most_common_match(db, i, num_tweets):
     ga = get_awards_matches(db,i,num_tweets)
@@ -204,7 +244,7 @@ def most_common_match(db, i, num_tweets):
 
 def remove_similar(vec):
     for awardA, awardB in itertools.combinations(vec, 2):
-        if difflib.SequenceMatcher(None, awardA[0], awardB[0]).ratio() >= 0.90:
+        if difflib.SequenceMatcher(None, awardA[0], awardB[0]).ratio() >= 0.85:
             awardB[1] += awardA[1]
             awardA[1] = 0
     return vec
@@ -236,7 +276,6 @@ def collapse_adjacent(v_awards):
 
 
 def format_output(awards_l):
-
     p_awards_l = []
     for award in awards_l:
         curr_str = award
@@ -264,17 +303,77 @@ def format_output(awards_l):
 
 def p_most_common(db):
     EVENTS_AWARDS = []
-    EVENTS = get_event_indicies(get_tpm_arr(db))
+    EVENTS = get_event_indicies(get_tpm_arr(db), len(db)/DIVIDE_FACTOR)
+    DIST_ADDR = 0
+    for n in range (1, len(EVENTS)):
+        DIST_ADDR += EVENTS[n] - EVENTS[n-1]
+        
+    DISTANCE_BETWEEN_EVENTS = DIST_ADDR/(len(EVENTS)-1)
     NUM_EVENTS = len(EVENTS)
     stripped_vec = []
     for n in range(0,NUM_EVENTS-1):
-        most_common = most_common_match(db, n, 1300)
+        most_common = most_common_match(db, n, DISTANCE_BETWEEN_EVENTS)
         if most_common: EVENTS_AWARDS.append(most_common)
-    remove_similar(EVENTS_AWARDS)
+    remove_similar2(remove_similar(EVENTS_AWARDS))
     for award in EVENTS_AWARDS:
         c_string = award[0].split()
         c_string[len(c_string)-1]
-        if award[1] > 10 and c_string[len(c_string)-1][0].isupper(): #ensure ending on caps
-#            print award
+        if award[1] > 2 and c_string[len(c_string)-1][0].isupper(): #ensure ending on caps
+            print award
             stripped_vec.append(award[0])
-    return format_output(stripped_vec)
+    stripped_vec = format_output(stripped_vec)
+   # for award in stripped_vec:
+   #     print award
+    return stripped_vec
+
+def strip_propers(s):
+    '''Returns a list proper nouns from a list-of Tokens'''
+    proper_nouns = []
+    noun_group = ""
+    for token in s:
+        if (token[0].isupper()) or token[0] == '\'' or token[0] == '\"':
+            noun_group += token + " "
+            if token[len(token) - 1] == '\'' or token[len(token) - 1] == '\"':
+                proper_nouns.append(noun_group)
+                noun_group = ""
+        else:
+            if(noun_group == ""): continue
+            else:
+                proper_nouns.append(noun_group)
+                noun_group = ""
+    if(noun_group != ""): proper_nouns.append(noun_group)
+    return proper_nouns
+
+
+
+def rejoin(lst):
+    ret_str = ""
+    for word in lst:
+        ret_str += word + " "
+    return ret_str
+        
+def get_best_dressed(db):
+    def remove_award_name(string):
+        ret_str=""
+        t_l = [token for token in nltk.word_tokenize(string)]
+        for token in t_l:
+            if token.find("Dress") != -1: continue
+            if  token.find("Best") != -1: continue
+            if token.find("dress") != -1: continue
+            if  token.find("best") != -1: continue
+            if token.find("worst") != -1: continue
+            if  token.find("Worst") != -1: continue
+            if token.find("Golden") != -1: continue
+            if  token.find("Globes") != -1: continue
+            ret_str += token + " "
+        return ret_str
+    for tweet in db:
+        tweet_text = tweet[0]
+        dress_loc = tweet_text.lower().find("dress")
+        if dress_loc != -1:
+         #   ittr=0
+         #   for n in range(len(tweet_text)-dress_loc, len(tweet_text)):
+          #      if tweet_text[0].isspace(): break
+           #     ittr +=1
+            stripped = rejoin(strip_propers(remove_award_name(tweet_text).split()))
+            print nltk.bigrams(stripped.encode("utf-8"))

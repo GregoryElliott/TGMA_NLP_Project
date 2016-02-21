@@ -1,7 +1,7 @@
 # EVENTS
 import time
 
-TPM_THRESHOLD = 500
+#TPM_THRESHOLD = 100 #500
 
 
 def get_time(db, i):
@@ -34,7 +34,7 @@ def get_tpm_arr(db):
     return freq_table
 
 
-def get_event_indicies(tpm_arr):
+def get_event_indicies(tpm_arr, TPM_THRESHOLD):
     '''Returns the indicies of events that meet the TPM_THRESHOLD'''
     lst = []
     for r in tpm_arr:
