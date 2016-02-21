@@ -86,12 +86,20 @@ EVENTS_AWARDS = []
 DIVIDE_FACTOR = 350  #1000
 
 #### Awards Parsing ####
-def check_integrity(string):
+def check_word(token):
     ## Currently not using this-> massive peformance decrease
     '''Returns false if string contains spelling errors'''
-    for token in string.split():
-        if token not in words.words(): return False
-    return True
+    if token in nltk.corpus.words.words(): return True
+    return False
+
+def check_stopword(token):
+    if token in nltk.corpus.stopwords.words('english'): return True
+    return False
+
+
+def check_name(token):
+    if token in nltk.corpus.names.words(): return True
+    return False
 
 
 def count_tokens(string):
@@ -326,7 +334,7 @@ def p_most_common(db):
    #     print award
     return stripped_vec
 
-def strip_propers(s):
+def strip_propers_award(s):
     '''Returns a list proper nouns from a list-of Tokens'''
     proper_nouns = []
     noun_group = ""
@@ -353,19 +361,24 @@ def rejoin(lst):
     return ret_str
         
 def get_best_dressed(db):
+    bigrams_l = []
     def remove_award_name(string):
         ret_str=""
         t_l = [token for token in nltk.word_tokenize(string)]
         for token in t_l:
+            if token.find("Red") != -1: continue
+            if token.find("See") != -1: continue
             if token.find("Dress") != -1: continue
             if  token.find("Best") != -1: continue
             if token.find("dress") != -1: continue
             if  token.find("best") != -1: continue
-            if token.find("worst") != -1: continue
-            if  token.find("Worst") != -1: continue
+            if token.find("worst") != -1: return ""
+            if  token.find("Worst") != -1: return ""
             if token.find("Golden") != -1: continue
             if  token.find("Globes") != -1: continue
-            ret_str += token + " "
+            if check_stopword(token): continue
+            if check_name(token): 
+                ret_str += token + " "
         return ret_str
     for tweet in db:
         tweet_text = tweet[0]
@@ -375,5 +388,9 @@ def get_best_dressed(db):
          #   for n in range(len(tweet_text)-dress_loc, len(tweet_text)):
           #      if tweet_text[0].isspace(): break
            #     ittr +=1
-            stripped = rejoin(strip_propers(remove_award_name(tweet_text).split()))
-            print nltk.bigrams(stripped.encode("utf-8"))
+            stripped = strip_propers_award(nltk.word_tokenize(remove_award_name(tweet_text)))
+           # print stripped
+            for gram in stripped:
+            #    print gram
+                bigrams_l.append(gram)
+    return nltk.FreqDist(bigrams_l).most_common(1)

@@ -67,23 +67,40 @@ def pre_ceremony():
 
     # Sort and dump python list objects as text files
     if not os.path.exists('dbstore13.data') or os.path.exists('dbstore15.data'):
+        print "Creating dbstore13.data"
         with open('gg2013.json') as data_2013:
             db2013 = json.load(data_2013)
             data_2013.close()
             db_sorted = sorted([[tweet['text'],cnv_time(int(tweet['timestamp_ms']))]
-                                 for tweet in db2013
-                                 if not check_retweet(tweet['text'])], key=lambda x:x[1])
-                              #   and check_best(tweet['text'])], key=lambda x:x[1])
+                                for tweet in db2013
+                                if not check_retweet(tweet['text']) and
+                                check_best(tweet['text'])], key=lambda x:x[1])
         with open('dbstore13.data', 'w') as outfile:
             pickle.dump(db_sorted, outfile)
+        print "Creating dbstore15.data"
         with open('gg2015.json') as data_2015:
             db2015 = json.load(data_2015)
             data_2015.close()
             db_sorted = sorted([[tweet['text'],cnv_time(int(tweet['timestamp_ms']))]
-                                 for tweet in db2015
-                                 if not check_retweet(tweet['text'])], key=lambda x:x[1])
-                              #   and check_best(tweet['text'])], key=lambda x:x[1])
+                                for tweet in db2015
+                                if not check_retweet(tweet['text']) and
+                                check_best(tweet['text'])], key=lambda x:x[1])
         with open('dbstore15.data', 'w') as outfile:
+            pickle.dump(db_sorted, outfile)
+    if not os.path.exists('nrt_dbstore13.data') or os.path.exists('nrt_dbstore15.data'):
+        print "Creating nrt_dbstore13.data"
+        with open('gg2013.json') as data_2013:
+            db2013 = json.load(data_2013)
+            data_2013.close()
+            db_sorted = [tweet['text'] for tweet in db2013 if not check_retweet(tweet['text'])]
+        with open('nrt_dbstore13.data', 'w') as outfile:
+            pickle.dump(db_sorted, outfile)
+        print "Creating nrt_dbstore15.data"
+        with open('gg2015.json') as data_2015:
+            db2015 = json.load(data_2015)
+            data_2015.close()
+            db_sorted = [tweet['text'] for tweet in db2015 if not check_retweet(tweet['text'])]
+        with open('nrt_dbstore15.data', 'w') as outfile:
             pickle.dump(db_sorted, outfile)
     print "Pre-ceremony processing complete."
     return
