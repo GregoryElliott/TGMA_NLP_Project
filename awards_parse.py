@@ -327,7 +327,7 @@ def p_most_common(db):
         c_string = award[0].split()
         c_string[len(c_string)-1]
         if award[1] > 2 and c_string[len(c_string)-1][0].isupper(): #ensure ending on caps
-            print award
+    #        print award
             stripped_vec.append(award[0])
     stripped_vec = format_output(stripped_vec)
    # for award in stripped_vec:
@@ -366,7 +366,7 @@ def rejoin(lst):
         ret_str += word + " "
     return ret_str
         
-def get_best_dressed(db):
+def find_best_dressed(db):
     bigrams_l = []
     def remove_award_name(string):
         ret_str=""
@@ -405,7 +405,7 @@ def get_best_dressed(db):
     return ret_str
 
 
-def get_best_joke(db):
+def find_best_joke(db):
     bigrams_l = []
     def remove_award_name(string):
         ret_str=""
@@ -444,7 +444,7 @@ def get_best_joke(db):
     return ret_str
 
 
-def get_best_act(db):
+def find_best_act(db):
     bigrams_l = []
     def remove_award_name(string):
         ret_str=""
