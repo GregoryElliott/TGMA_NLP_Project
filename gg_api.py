@@ -133,6 +133,8 @@ def strip_propers(s):
                 noun_group = ""
         if (token[0].isupper()) or token[0] == '\'' or token[0] == '\"' or quotes or token[0].strip(' ').isdigit():
             noun_group += token + " "
+            if '\'s' in noun_group:
+                noun_group = noun_group.replace('\'s','')
             if token[0] == '\'' or token[0] == '\"':
                 quotes = True
                 if noun_group == "":
@@ -245,48 +247,17 @@ def get_pn_vec_from_range(db):
     return events
 
 def get_pn_vec_from_range_for_hosts(db):
-    #pn_count_vec = [["none", 0]]
     events = []
-    #event_index = get_event_indicies(get_tpm_arr((db)))[1]
     matches = -1
-    #for event_index in get_event_indicies(get_tpm_arr((db))):
-        #for n in range(0,100):
-            #tweet_index = event_index + n
-            #for proper in strip_propers(normalize_str(db[tweet_index]['text']).split()):
-                #for variation in get_variations(proper):
-                    #for i in range(0, len(pn_count_vec)):
-                        #if pn_count_vec[i][0].find(variation) != -1:
-                            #matches = i
-                            #break
-                #if (matches == -1):
-                    #pn_count_vec.append([proper,0])
-                #else:
-                    #pn_count_vec[matches][1] += 1
-                    #matches = -1
-            #print strip_propers(normalize_str(db[tweet_index]['text']).split())
-    #j = 0
     nominees = {}
     winners = {}
-    for event_index in get_event_indicies(get_tpm_arr((db))):
-        #if j > 6:
-            #break
+    for event_index in get_event_indicies(get_tpm_arr((db))):   
         pn_count_vec = []
-        #content = [proper for n in range(0,1000) for proper in strip_propers(normalize_str(db[event_index + n]['text']).split()) if proper[0].strip().lower() not in stopwords.words()]
-        #content = [proper for n in range(0,1000) for proper in strip_propers(normalize_str(db[event_index + n]['text']).split())]
-        #content = [b for n in range(0,1000) for b in db[event_index + n]['text'].split()]
         bigram = [w for n in range(500) for s in sent_tokenize(db[event_index + n]['text']) for w in bigrams([w.lower() for w in word_tokenize(s) if w.isalnum()])]
         trigram = [w for n in range(500) for s in sent_tokenize(db[event_index + n]['text']) for w in trigrams([w.lower() for w in word_tokenize(s) if w.isalnum()])]
-        #bigram = bigrams(word_tokenize(content))
         name = bigram + trigram
         pn_count_vec = FreqDist(name)
-        #pn_temp = FreqDist(name)
-
-            #for variation in get_variations(item[0]):
-                #if variation in pn_count_vec:
-                    #pn_count_vec[item[0]] = pn_count_vec[item[0]] + pn_count_vec[variation]
         events.append(pn_count_vec)
-        #j = j + 1
-
     return events
 
 
@@ -371,10 +342,6 @@ def get_awards_matches(db, i, num_tweets):
 def most_common_match(db, i, num_tweets):
     return sorted(get_awards_matches(db,i,num_tweets), key=lambda x:x[1], reverse=True)[1]
 
-def p_most_common():
-    for n in range(0,NUM_EVENTS-1):
-        print most_common_match(db2013, n, 1000)
-
 
 
 #### ---------------------- API Accesing Functions ------------------------- ####
@@ -427,15 +394,12 @@ def get_hosts(year):
 def get_awards(year):
     '''Awards is a list of strings. Do NOT change the name
     of this function or what it returns.'''
-    if (year == '2013'):
-        with open('dbstore13.data') as infile:
-                db = pickle.load(infile)
-    else:
-        with open('dbstore15.data') as infile:
-                db = pickle.load(infile)
+    year = year[2:4]    
+    file_name = 'dbstore%s.data' % year
+    with open(file_name) as infile:
+        db = pickle.load(infile)
 
     ret_l = p_most_common(db)
-    print ret_l
     return ret_l
 
 def get_nominees(year):
@@ -569,8 +533,13 @@ def get_winner(year):
             if re.search(reg[award],e.lower()): 
                 #if 'j.k. simmons' in e.lower():
                     #print e                   
-                for proper in strip_propers(normalize_str(e).split()):                    
-                    winners_list[award].append(proper.lower().replace('\'','\"').strip(' '))
+                for proper in strip_propers(normalize_str(e).split()):    
+                    if 'song' in award:
+                        reg = 'for %s' % proper
+                        if reg in e.lower():
+                            winners_list[award].append(proper.lower().replace('\'','\"').strip(' '))
+                    else:
+                        winners_list[award].append(proper.lower().replace('\'','\"').strip(' '))
                 continue
 
     # for f in db:
@@ -798,7 +767,7 @@ def get_presenters(year):
     return winners
 
 def pre_ceremony():
-        '''This function loads/fetches/processes any data your program
+    '''This function loads/fetches/processes any data your program
     will use, and stores that data in your DB or in a json, csv, or
     plain text file. It is the first thing the TA will run when grading.
     Do NOT change the name of this function or what it returns.'''
@@ -806,7 +775,7 @@ def pre_ceremony():
     print "Beginning ceremony processing"
 
     # Sort and dump python list objects as text files
-    if not os.path.exists('dbstore13.data') or os.path.exists('dbstore15.data'):
+    if not os.path.exists('dbstore13.data') or not os.path.exists('dbstore15.data'):
         print "Creating dbstore13.data"
         with open('gg2013.json') as data_2013:
             db2013 = json.load(data_2013)
@@ -827,7 +796,7 @@ def pre_ceremony():
                                 check_best(tweet['text'])], key=lambda x:x[1])
         with open('dbstore15.data', 'w') as outfile:
             pickle.dump(db_sorted, outfile)
-    if not os.path.exists('nrt_dbstore13.data') or os.path.exists('nrt_dbstore15.data'):
+    if not os.path.exists('nrt_dbstore13.data') or not os.path.exists('nrt_dbstore15.data'):
         print "Creating nrt_dbstore13.data"
         with open('gg2013.json') as data_2013:
             db2013 = json.load(data_2013)
@@ -845,6 +814,104 @@ def pre_ceremony():
     print "Pre-ceremony processing complete."
     return
 
+
+## TEXT INTERFACE
+## --------------------------------------------------------------------------
+# get_hosts()
+# get_awards()
+# get_nominees()
+# get_winner()
+# get_presenters()
+# get_best_dressed()
+# get_best_joke()
+
+def get_best_dressed(year):
+    year = year[2:4]    
+    file_name = 'dbstore%s.data' % year
+    with open(file_name) as infile:
+        db = pickle.load(infile)
+    ret_l = find_best_dressed(db)
+    return ret_l
+
+def get_best_joke(year):
+    year = year[2:4]    
+    file_name = 'dbstore%s.data' % year
+    with open(file_name) as infile:
+        db = pickle.load(infile)
+    ret_l = find_best_joke(db)
+    return ret_l
+
+def start_interface():
+    def pr_help():
+        print "List of commands:"
+        print "hosts [year] \t Returns a list of hosts for given year"
+        print "awards [year] \t Returns a list of awards for given year"
+        print "nominees [year] \t Returns a dictionary of nominees for given year"
+        print "winners [year] \t Returns a dictionary of winner for given years"
+        print "presenters [year] \t Returns a list of presents for given year"
+        print "bestdress [year] \t Returns the best dressed individual for given year"
+        print "bestjoke [year] \t Returns who gave the best joke for given year"
+    def check_year(s):
+        if s == "2013" or s == "2015":
+            return True
+        print "Please enter a valid year"
+        return False
+    print "Performing database initialization"
+    pre_ceremony()
+    print "Welcome to GG Awards Parser v2.0!"
+    print "=========================================="
+    print "Enter help for a list of commonly-used commands"
+    print "Special features include: Best Dressed and Best Joke"
+    print "Databases available: 2013, 2015"
+    print "========================================="
+    while True:
+        s_input = raw_input()
+        tokens = s_input.split()
+        if len(tokens) > 2:
+            print "Unknown command. Type help for commands list or exit to quit"
+        elif len(tokens) < 2:
+            if tokens[0] == "help":
+                pr_help()
+            elif tokens[0] == "exit":
+                return
+            else:
+                print "Unknown command. Type help for commands list or exit to quit"
+        else:
+            if tokens[0] == "hosts":
+                if check_year(tokens[1]):
+                    print "Fetching hosts..."
+                    print get_hosts(tokens[1])
+            elif tokens[0] == "nominees":
+                if check_year(tokens[1]):
+                    print "Fetching nominees..."
+                    print get_nominees(tokens[1])
+            elif tokens[0] == "awards":
+                if check_year(tokens[1]):
+                    print "Fetching awards..."
+                    print get_awards(tokens[1])
+            elif tokens[0] == "winners":
+                if check_year(tokens[1]):
+                    print "Fetching winners..."
+                    print get_winner(tokens[1])
+            elif tokens[0] == "presenters":
+                if check_year(tokens[1]):
+                    print "Fetching presenters..."
+                    print get_presenters(tokens[1])
+            elif tokens[0] == "bestdress":
+                if check_year(tokens[1]):
+                    print "Fetching best dressed..."
+                    print get_best_dressed(tokens[1])
+            elif tokens[0] == "bestjoke":
+                if check_year(tokens[1]):
+                    print "Fetching best joke..."
+                    print get_best_joke(tokens[1])
+            else:
+                print "Unknown command. Type help for commands list or exit to quit"
+
+import sys # for system args
+## END TEXT INTERFACE
+## --------------------------------------------------------------------------
+
 def main():
     '''This function calls your program. Typing "python gg_api.py"
     will run this function. Or, in the interpreter, import gg_api
@@ -860,9 +927,14 @@ def main():
     #print get_presenters('2013')
     #print get_winner('2015')
     #print get_awards('2013')
-    get_nominees('2013')
+    #get_nominees('2013')
+    pre_ceremony()
 
     return
 
 if __name__ == '__main__':
-    main()
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "enter":
+            start_interface()
+    else:
+        main()
