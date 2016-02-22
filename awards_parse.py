@@ -76,11 +76,11 @@ def dump_obj2():
 #if not os.path.exists('dbstore13.data') or os.path.exists('dbstore15.data'):
  #   dump_obj()
 #dump_obj()
-with open('dbstore13.data') as infile:
-    db2013 = pickle.load(infile)
+#with open('dbstore13.data') as infile:
+    #db2013 = pickle.load(infile)
     
-with open('dbstore15.data') as infile:
-    db2015 = pickle.load(infile)
+#with open('dbstore15.data') as infile:
+    #db2015 = pickle.load(infile)
 
 EVENTS_AWARDS = []
 DIVIDE_FACTOR = 350  #1000
