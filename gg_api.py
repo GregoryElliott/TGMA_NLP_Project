@@ -844,13 +844,15 @@ def get_best_joke(year):
 def start_interface():
     def pr_help():
         print "List of commands:"
-        print "hosts [year] \t Returns a list of hosts for given year"
-        print "awards [year] \t Returns a list of awards for given year"
-        print "nominees [year] \t Returns a dictionary of nominees for given year"
-        print "winners [year] \t Returns a dictionary of winner for given years"
-        print "presenters [year] \t Returns a list of presents for given year"
-        print "bestdress [year] \t Returns the best dressed individual for given year"
-        print "bestjoke [year] \t Returns who gave the best joke for given year"
+        print "hosts [year] \t Displays the hosts for a given year"
+        print "awards [year] \t Displays the awards for a given year"
+        print "nominees [year] \t Displays the nominees for a given year"
+        print "winners [year] \t Displays the winners for a given year"
+        print "presenters [year] \t Displays the presenters for a given year"
+        print "bestdress [year] \t Displays best dressed individual for a given year"
+        print "bestjoke [year] \t Displays who gave the best joke for a given year"
+        print "help \t Display all available of commands"
+        print "exit \t Quits the program"
     def check_year(s):
         if s == "2013" or s == "2015":
             return True
@@ -880,23 +882,33 @@ def start_interface():
             if tokens[0] == "hosts":
                 if check_year(tokens[1]):
                     print "Fetching hosts..."
-                    print get_hosts(tokens[1])
+                    hosts = get_hosts(tokens[1])
+                    for host in hosts:
+                        print host
             elif tokens[0] == "nominees":
                 if check_year(tokens[1]):
                     print "Fetching nominees..."
-                    print get_nominees(tokens[1])
+                    nominees = get_nominees(tokens[1])
+                    for nominee in nominees:
+                        print nominee
             elif tokens[0] == "awards":
                 if check_year(tokens[1]):
                     print "Fetching awards..."
-                    print get_awards(tokens[1])
+                    awards = get_awards(tokens[1])
+                    for award in awards:
+                        print award
             elif tokens[0] == "winners":
                 if check_year(tokens[1]):
                     print "Fetching winners..."
-                    print get_winner(tokens[1])
+                    winners = get_winner(tokens[1])
+                    for winner in winners:
+                        print winner
             elif tokens[0] == "presenters":
                 if check_year(tokens[1]):
                     print "Fetching presenters..."
-                    print get_presenters(tokens[1])
+                    presenters = get_presenters(tokens[1])
+                    for p in presenters:
+                        print p
             elif tokens[0] == "bestdress":
                 if check_year(tokens[1]):
                     print "Fetching best dressed..."
