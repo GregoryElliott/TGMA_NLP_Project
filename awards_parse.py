@@ -73,15 +73,6 @@ def dump_obj2():
     with open('dbstore15.data', 'w') as outfile:
         pickle.dump(db_sorted, outfile)
 
-#if not os.path.exists('dbstore13.data') or os.path.exists('dbstore15.data'):
- #   dump_obj()
-#dump_obj()
-#with open('dbstore13.data') as infile:
-    #db2013 = pickle.load(infile)
-    
-#with open('dbstore15.data') as infile:
-    #db2015 = pickle.load(infile)
-
 EVENTS_AWARDS = []
 DIVIDE_FACTOR = 350  #1000
 
@@ -121,9 +112,6 @@ def get_awards_matches(db, i, num_tweets):
                 ind +=1
                 if (n >= (len(award)-1)): break
                 if (string[n] != award[n]): break
-      #      if (ind > MIN_EVENTS_MATCH_THRESHOLD):  #Skip if not really a match
-       #         award[1] += 1
-        #        return  #if we find it was the award for a previous event, dont include it
             print award[0], string
             if difflib.SequenceMatcher(None, award[0], string).ratio() >= .8:
                 if len(award[0]) >= len(string):
@@ -140,23 +128,15 @@ def get_awards_matches(db, i, num_tweets):
                 if (n >= (len(match[0])-1)): break
                 if (string[n] != match[0][n]): break
             if difflib.SequenceMatcher(None, match[0], string).ratio() <= 0.75: continue
-       #     if (ind < MIN_MATCH_THRESHOLD): continue #Skip if not really a match
             else:
-              #  if (match[1] <=4 ): match[0] = match[0][:ind] #only alter entry if singleton
                 match[1] += 1
                 return
         matches.append([results_str, 1]) #if no match append
     def trim_award(string):
         # Trim a string before colon
         ret_str = ""
-      #  under_fired = False
         for n in range(0, len(string)):
             if (not string[n].isalpha() and not string[n].isspace()):   # == ":" or string[n] == "-"
-               # if (string[n] == '-'):
-              #      if under_fired:
-             #           return ret_str
-            #        else:
-           #             under_fired = True
                 if (string[n] != ","): #and string[n] != "-"):
                     return ret_str
             ret_str += string[n]
@@ -169,9 +149,6 @@ def get_awards_matches(db, i, num_tweets):
         tweet = ""
         tweet = db[tweet_i][0]
         find_i = tweet.find("Best")
-      #  find_i = re.search("best", tweet, re.IGNORECASE) #
-       # if (not find_i): continue
-        # find_i = find_i.start()
         start_i = find_i 
         if (find_i == -1): continue
         tweet_index_vec = get_string_indicies(tweet)
@@ -200,6 +177,7 @@ def get_awards_matches(db, i, num_tweets):
                 elif (tmp_word == "language"): continue
                 elif (tmp_word.find("min") != -1):
                     results_str += "Mini-Series "
+                elif (tmp_word.find("dress") != -1): break
                 elif (tmp_word == "comedy" or tmp_word == "musical"):
                     j = len(results_str)-1
                     while j >= 0:
@@ -390,13 +368,8 @@ def find_best_dressed(db):
         tweet_text = tweet[0]
         dress_loc = tweet_text.lower().find("dress")
         if dress_loc != -1:
-         #   ittr=0
-         #   for n in range(len(tweet_text)-dress_loc, len(tweet_text)):
-          #      if tweet_text[0].isspace(): break
-           #     ittr +=1
             stripped = strip_propers_award(nltk.word_tokenize(remove_award_name(tweet_text)))
             for gram in nltk.bigrams(stripped):
-            #    print gram
                 bigrams_l.append(gram)
     most_freq  = nltk.FreqDist(bigrams_l).most_common(1)
     ret_str = ""
@@ -429,13 +402,8 @@ def find_best_joke(db):
         tweet_text = tweet[0]
         dress_loc = tweet_text.lower().find("joke")
         if dress_loc != -1:
-         #   ittr=0
-         #   for n in range(len(tweet_text)-dress_loc, len(tweet_text)):
-          #      if tweet_text[0].isspace(): break
-           #     ittr +=1
             stripped = strip_propers_award(nltk.word_tokenize(remove_award_name(tweet_text)))
             for gram in nltk.bigrams(stripped):
-            #    print gram
                 bigrams_l.append(gram)
     most_freq  = nltk.FreqDist(bigrams_l).most_common(1)
     ret_str = ""
@@ -468,14 +436,8 @@ def find_best_act(db):
         tweet_text = tweet[0]
         dress_loc = tweet_text.lower().find("joke")
         if dress_loc != -1:
-         #   ittr=0
-         #   for n in range(len(tweet_text)-dress_loc, len(tweet_text)):
-          #      if tweet_text[0].isspace(): break
-           #     ittr +=1
             stripped = strip_propers_award(nltk.word_tokenize(remove_award_name(tweet_text)))
-           # print stripped
             for gram in nltk.bigrams(stripped):
-            #    print gram
                 bigrams_l.append(gram)
     most_freq  = nltk.FreqDist(bigrams_l).most_common(1)
     ret_str = ""

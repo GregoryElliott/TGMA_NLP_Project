@@ -75,22 +75,22 @@ REGEX_AWARDS = {
 with open('gg2013.json') as data_2013:
     db2013 = json.load(data_2013)
 
-TPM_THRESHOLD = 700
+TPM_THRESHOLD = 500
 
 def get_time(db, i):
     '''Returns a list of [Hour, Minutes] for a tweet at index i in db'''
     def get_hour_minutes(time):
         return [time[3], time[4]]
-    return get_hour_minutes(time.gmtime(db[i]["timestamp_ms"]/1000))
+    return get_hour_minutes(time.gmtime(int(db[i]["timestamp_ms"])/1000))
 
 
 def get_tpm_arr(db):
     '''Returns a TPM (Tweet-per-minute) array for the given db'''
-    dim = get_time(db, len(db)-1)
+    dim = db[len(db)-1][1]
     freq_table = [[[0,0] for i in range(60)] for j in range(dim[0]+1)]
     ittr = 0
     for n in db:
-        curr_time = get_time(db, ittr)
+        curr_time = n[1]
         # Either create a new entry or increment old one
         if (freq_table[curr_time[0]][curr_time[1]] == [0,0]):
             freq_table[curr_time[0]][curr_time[1]] = [1, ittr]
@@ -230,8 +230,8 @@ def get_pn_vec_from_range_for_hosts(db):
 ### Awards Parsing  
 ### Depends On: Nothing
 ########################################################################
-EVENTS = get_event_indicies(get_tpm_arr(db2013))
-NUM_EVENTS = len(EVENTS)
+#EVENTS = get_event_indicies(get_tpm_arr(db2013))
+#NUM_EVENTS = len(EVENTS)
 
 #### Functions for String-Index-Vectors ####
 #### Ex: "This is a sentence -> [0, 5, 8, 10, 19]
@@ -354,10 +354,11 @@ def get_nominees(year):
     '''Nominees is a dictionary with the hard coded award
     names as keys, and each entry a list of strings. Do NOT change
     the name of this function or what it returns.'''
-    # Your code here
-    file_name = 'gg%s.json' % year
-    with open(file_name, 'r') as data:
-        db = json.load(data)
+    yr = year[2:4]
+    file_name = 'nrt_dbstore%s.data' % yr
+    with open(file_name) as infile:
+        db = pickle.load(infile)
+        
     lower_names = []
     for n in names.words():
         lower_names.append(n.lower())
@@ -372,7 +373,7 @@ def get_nominees(year):
         propers = []
         awards = []
         for n in range(500):
-            e = db[event_index + n]['text']
+            e = db[event_index + n][0]
             if 'RT' in e:
                 continue
             for a in REGEX_AWARDS:
@@ -712,14 +713,18 @@ def pre_ceremony():
         with open('gg2013.json') as data_2013:
             db2013 = json.load(data_2013)
             data_2013.close()
-            db_sorted = [tweet['text'] for tweet in db2013 if not check_retweet(tweet['text'])]
+            db_sorted = sorted([[tweet['text'],cnv_time(int(tweet['timestamp_ms']))]
+                                for tweet in db2013
+                                if not check_retweet(tweet['text'])], key=lambda x:x[1])
         with open('nrt_dbstore13.data', 'w') as outfile:
             pickle.dump(db_sorted, outfile)
         print "Creating nrt_dbstore15.data"
         with open('gg2015.json') as data_2015:
             db2015 = json.load(data_2015)
             data_2015.close()
-            db_sorted = [tweet['text'] for tweet in db2015 if not check_retweet(tweet['text'])]
+            db_sorted = sorted([[tweet['text'],cnv_time(int(tweet['timestamp_ms']))]
+                                for tweet in db2015
+                                if not check_retweet(tweet['text'])], key=lambda x:x[1])
         with open('nrt_dbstore15.data', 'w') as outfile:
             pickle.dump(db_sorted, outfile)
     print "Pre-ceremony processing complete."
@@ -790,7 +795,10 @@ def start_interface():
                     print "Fetching nominees..."
                     nominees = get_nominees(tokens[1])
                     for nominee in nominees:
-                        print nominee
+                        print ""
+                        print nominee, ":"
+                        for n in nominees[nominee]:
+                            print n
             elif tokens[0] == "awards":
                 if check_year(tokens[1]):
                     print "Fetching awards..."
@@ -802,13 +810,16 @@ def start_interface():
                     print "Fetching winners..."
                     winners = get_winner(tokens[1])
                     for winner in winners:
-                        print winner
+                        print winner, ": \t", winners[winner]
             elif tokens[0] == "presenters":
                 if check_year(tokens[1]):
                     print "Fetching presenters..."
                     presenters = get_presenters(tokens[1])
                     for p in presenters:
-                        print p
+                        print ""
+                        print p, ":"
+                        for n in presenters[p]:
+                            print n
             elif tokens[0] == "bestdress":
                 if check_year(tokens[1]):
                     print "Fetching best dressed..."
@@ -833,3 +844,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+ 
