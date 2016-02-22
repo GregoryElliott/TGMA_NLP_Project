@@ -415,10 +415,12 @@ def get_nominees(year):
     for n in names.words():
         lower_names.append(n.lower())
     nominees = {}
+    for award in REGEX_AWARDS:
+        nominees[award] = []
     winn = get_winner(year)
     hosts = get_hosts(year)
     for event_index in get_event_indicies(get_tpm_arr((db))):
-        proper = [proper for n in range(500) for e in db[event_index + n]['text'] if 'RT' not in e for proper in strip_propers(normalize_str(e).split())]
+        proper = [proper for n in range(-500,500) for e in db[event_index + n]['text'] if 'RT' not in e for proper in strip_propers(normalize_str(e).split())]
         freq = FreqDist(proper)
         for f in freq.most_common(25):
             award = None
@@ -430,8 +432,12 @@ def get_nominees(year):
                         award = a
             if award:
                 count = 0
-                for g in freq.most_common(50):                    
+                for g in freq.most_common(50):
                     stop = False
+                    for nom in nominees[award]:
+                        if nom.lower() in g.lower() or g.lower() in nom.lower():
+                            stop = True
+                            break
                     if 'the' == g[0].lower():
                         continue
                     for a in award.split(' '):   
@@ -476,7 +482,7 @@ def get_nominees(year):
                         if stop:
                             break   
                         if not done:
-                            winners[award] = (g[0].strip("\"")) #win[0].strip('\'').strip('\"'))
+                            nominees[award] = (g[0].strip("\"")) #win[0].strip('\'').strip('\"'))
                         #test_winners_list[h].append(win)
                         done = True
                         break
@@ -517,8 +523,8 @@ def get_winner(year):
             e = f['text']
             if 'RT' in e:
                 continue
-            if 'selma' in e.lower():
-                print e
+            #if 'skyfall' in e.lower():
+                #print e
             if 'supporting' not in award:
                 if 'supporting' in e.lower():
                     continue
@@ -536,8 +542,17 @@ def get_winner(year):
                     #print e                   
                 for proper in strip_propers(normalize_str(e).split()):    
                     if 'song' in award:
-                        reg = 'for %s' % proper
-                        if reg in e.lower():
+                        regexpr1 = 'film %s' % proper
+                        regexpr2 = 'film \'%s' % proper
+                        regexpr3 = 'film \"%s' % proper 
+                        regexpr4 = 'movie %s' % proper
+                        regexpr5 = 'movie \'%s' % proper
+                        regexpr6 = 'movie \"%s' % proper 
+                        regexpr7 = 'from %s' % proper
+                        regexpr8 = 'from \'%s' % proper
+                        regexpr9 = 'from \"%s' % proper 
+                        if regexpr1.lower() in e.lower() or regexpr2.lower() in e.lower() or regexpr3.lower() in e.lower() or regexpr4.lower() in e.lower() or regexpr5.lower() in e.lower() or regexpr6.lower() in e.lower() or regexpr7.lower() in e.lower() or regexpr8.lower() in e.lower() or regexpr9.lower() in e.lower():
+                            print e
                             winners_list[award].append(proper.lower().replace('\'','\"').strip(' '))
                     else:
                         winners_list[award].append(proper.lower().replace('\'','\"').strip(' '))
@@ -569,6 +584,8 @@ def get_winner(year):
             stop = False
             if 'the' == win[0].lower():
                 continue
+            if win[0] == '':
+                continue
             for a in h.split(' '):   
                 #if done:
                     #break     
@@ -579,10 +596,12 @@ def get_winner(year):
                         if win[0].count('\'') != 2 and win[0].count('\"') != 2:
                             for cur_win in winners_freq[h].most_common(25):
                                 if win[0] in cur_win[0] and len(cur_win[0].split(' ')) > 2:
-                                    win = cur_win
-                                    if 'simmons' in win[0].lower():
-                                        print 'here5'
-                                    break     
+                                    if cur_win[0][0] == '\'' or cur_win[0][0] == '\"':
+                                        if cur_win[0][len(cur_win[0])-1] == '\'' or cur_win[0][len(cur_win[0])-1] == '\"':
+                                            win = cur_win
+                                            if 'simmons' in win[0].lower():
+                                                print 'here5'
+                                            break     
                 if 'actor' in h or 'actress' in h or 'director' in h:
                     if 'simmons' in win[0].lower():
                         print 'here3'
@@ -591,6 +610,8 @@ def get_winner(year):
                     replace = False
                     if len(win[0].split(' ')) < 2:
                         for cur_win in winners_freq[h].most_common(25):
+                            if cur_win[0] == '':
+                                continue
                             if win[0] in cur_win[0] and len(cur_win[0].split(' ')) == 2:
                                 win = cur_win
                                 replace = True
@@ -731,8 +752,12 @@ def get_presenters(year):
                     winner[h].append([pair[1]])
             if '...' in win[0]:
                 continue
-            if 'presented' in win[0].lower():
-                continue
+            if 'presents' in win[0].lower():
+                win[0] = (win[0].lower().split("presents"))[0]
+            if 'presented by' in win[0].lower():
+                win[0] = (win[0].lower().split("presented by"))[1]
+            if 'present' in win[0].lower():
+                win[0] = (win[0].lower().split("present"))[0]
             if any(char.isdigit() for char in win[0]):
                 continue
             for a in h.split(' '):   
