@@ -75,7 +75,7 @@ REGEX_AWARDS = {
 with open('gg2013.json') as data_2013:
     db2013 = json.load(data_2013)
 
-TPM_THRESHOLD = 1200
+TPM_THRESHOLD = 700
 
 def get_time(db, i):
     '''Returns a list of [Hour, Minutes] for a tweet at index i in db'''
@@ -156,8 +156,6 @@ def strip_propers(s):
                     noun_group = noun_group.replace(punct, "")
                     proper_nouns.append(noun_group.replace('\'','\"'))
                     noun_group = ""
-            #if '-' in noun_group:
-                #noun_group = noun_group.replace('-', ' ')
         else:
             if(noun_group == ""): continue
             else:
@@ -178,8 +176,6 @@ def strip_proper_pairs(s):
                 noun_group = ""
         if (token[0].isupper()) or token == 'and':
             noun_group += token + " "            
-            #if '-' in noun_group:
-                #noun_group = noun_group.replace('-', ' ')
         else:
             if(noun_group == ""): continue
             for punct in [',','.',':','!',';','/']:      
@@ -202,47 +198,17 @@ def get_variations(s):
     return variations
 
 def get_pn_vec_from_range(db):
-    #pn_count_vec = [["none", 0]]
     events = []
-    #event_index = get_event_indicies(get_tpm_arr((db)))[1]
     matches = -1
-    #for event_index in get_event_indicies(get_tpm_arr((db))):
-        #for n in range(0,100):
-            #tweet_index = event_index + n
-            #for proper in strip_propers(normalize_str(db[tweet_index]['text']).split()):
-                #for variation in get_variations(proper):
-                    #for i in range(0, len(pn_count_vec)):
-                        #if pn_count_vec[i][0].find(variation) != -1:
-                            #matches = i
-                            #break
-                #if (matches == -1):
-                    #pn_count_vec.append([proper,0])
-                #else:
-                    #pn_count_vec[matches][1] += 1
-                    #matches = -1
-            #print strip_propers(normalize_str(db[tweet_index]['text']).split())
-    #j = 0
     nominees = {}
     winners = {}
-    for event_index in get_event_indicies(get_tpm_arr((db))):
-        #if j > 6:
-            #break
+    for event_index in get_event_indicies(get_tpm_arr((db))):   
         pn_count_vec = []
-        #content = [proper for n in range(0,1000) for proper in strip_propers(normalize_str(db[event_index + n]['text']).split()) if proper[0].strip().lower() not in stopwords.words()]
-        #content = [proper for n in range(0,1000) for proper in strip_propers(normalize_str(db[event_index + n]['text']).split())]
-        #content = [b for n in range(0,1000) for b in db[event_index + n]['text'].split()]
         bigram = [w for n in range(500) for s in sent_tokenize(db[event_index + n]['text']) for w in bigrams([w.lower() for w in word_tokenize(s) if w.isalnum()])]
         trigram = [w for n in range(500) for s in sent_tokenize(db[event_index + n]['text']) for w in trigrams([w.lower() for w in word_tokenize(s) if w.isalnum()])]
-        #bigram = bigrams(word_tokenize(content))
         name = bigram + trigram
         pn_count_vec = FreqDist(name)
-        #pn_temp = FreqDist(name)
-
-            #for variation in get_variations(item[0]):
-                #if variation in pn_count_vec:
-                    #pn_count_vec[item[0]] = pn_count_vec[item[0]] + pn_count_vec[variation]
         events.append(pn_count_vec)
-        #j = j + 1
 
     return events
 
@@ -354,24 +320,6 @@ def get_hosts(year):
     file_name = 'gg%s.json' % year
     with open(file_name, 'r') as data:
         db = json.load(data)
-    # events = get_pn_vec_from_range_for_hosts(db2013)
-    # hosts = []
-    # host = 0
-    # for item in events[0].most_common(100):
-    #     skip = False
-    #     #print item
-    #     if host > 1:
-    #         break
-    #     for i in item[0]:
-    #         if i in IGNORE_WORDS:
-    #             skip = True
-    #             break
-    #     if skip:
-    #         continue
-    #     if item[0][0] in map(lambda x: x.lower(), names.words()) or item[0][1] in map(lambda x: x.lower(), names.words()):
-    #         hosts.append(' '.join(word for word in item[0]))
-    #         host = host + 1
-
     hosts = []
     pairs = []
     for f in db:
@@ -379,7 +327,7 @@ def get_hosts(year):
         if 'and' in e.lower():
             for proper in strip_proper_pairs(normalize_str(e).split()):
                 pair = proper.split('and')
-                if len(pair) == 2: #and len(pair[0].split(' ')) == 2 and len(pair[1].split(' ')) == 2:
+                if len(pair) == 2:
                     if pair[0] != ' ' and pair[1] != ' ':
                         pairs.append((pair[0].lower().replace('\'','\"').strip(' '), pair[1].lower().replace('\'','\"').strip(' ')))
     pairs_freq = FreqDist(pairs)
@@ -400,97 +348,9 @@ def get_awards(year):
         db = pickle.load(infile)
 
     ret_l = p_most_common(db)
-    print ret_l
     return ret_l
 
-    
 def get_nominees(year):
-
-    file_name = 'gg%s.json' % year
-    with open(file_name, 'r') as data:
-        db = json.load(data)
-    awards = OFFICIAL_AWARDS
-    winners = {}
-    winners_list = {}
-    winners_freq = {}
-    hosts = get_hosts(year)
-    reg = REGEX_AWARDS
-    propers = []
-    for award in REGEX_AWARDS:
-        winners[award] = []
-
-    for award in awards:
-        winners_list[award] = []
-    print len(awards)
-    for award in reg: 
-        print award
-        award_str = []
-        for f in db:
-            e = f['text']
-            if 'supporting' in award:
-                if 'supporting' not in e.lower():
-                    continue
-            if re.search(r'(((rooting)|(\s?snub))|((\s?lost)|(\s?pissed)))|((\s?bullshit)|(\s?should of))|((\s?loss)|(\s?lossing))|nominated|nominee|nomination|falter', e.lower()):   
-                print e.encode("utf-8")         
-                if re.search(reg[award],e.lower()): 
-                    for proper in strip_propers(normalize_str(e).split()):
-                        winners_list[award].append(proper.lower().replace('\'','\"').strip(' '))
-                    continue
-
-    test_winners_list = {}
-    for a in winners_list:
-        freq = FreqDist(winners_list[a])
-        winners_freq[a] = freq
-        #winners[a] = [] 
-        test_winners_list[a] = []
-    
-    for h in winners_freq:
-        done = False
-        count = 0
-        print h
-        for win in winners_freq[h].most_common(25):
-            #if done:
-                #break
-            stop = False
-            if 'the' == win[0].lower():
-                continue
-            for a in h.split(' '):   
-                if done:
-                    break           
-                if a.lower() in win[0].lower():
-                    break
-                for ignore in IGNORE_WORDS:
-                    if ignore in win[0].lower():
-                        stop = True
-                        break
-                for w in win[0].split(" "):
-                    for host in hosts:
-                        if w.lower() in host.lower():
-                            stop = True
-                            break
-                if 'song' in h or 'screenplay' in h or 'score' in h:
-                    if win[0].count('\'') != 2 and win[0].count('\"') != 2:
-                        break
-                if 'actor' in h or 'actress' in h or 'director' in h:
-                    if len(win[0].split(' ')) < 2:
-                        break
-                if stop:
-                    break   
-                if not done:
-                    winners[h] = (win[0].strip("\"")) #win[0].strip('\'').strip('\"'))
-                test_winners_list[h].append(win)
-                count = count + 1
-                if count >= 5:
-                    done = True
-                #done = True
-                break
-
-    for t in test_winners_list:
-        print t
-        print test_winners_list[t]
-    return winners
-
-def get_nomineesa(year):
     '''Nominees is a dictionary with the hard coded award
     names as keys, and each entry a list of strings. Do NOT change
     the name of this function or what it returns.'''
@@ -502,104 +362,89 @@ def get_nomineesa(year):
     for n in names.words():
         lower_names.append(n.lower())
     nominees = {}
+    presenters = get_presenters(year)
     for award in REGEX_AWARDS:
         nominees[award] = []
     winn = get_winner(year)
-    winn = {}
     hosts = get_hosts(year)
     for event_index in get_event_indicies(get_tpm_arr((db))):
-        print 'START!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n'
-        propers = {}
-        #propers = [proper for n in range(0,-500,-1) for e in db[event_index + n] for proper in strip_propers(normalize_str(e['text']).split())]
-        for n in range(-500,500):
-            #for e in db[event_index + n]:
+        award = None
+        propers = []
+        awards = []
+        for n in range(500):
             e = db[event_index + n]['text']
             if 'RT' in e:
                 continue
-            award = None
             for a in REGEX_AWARDS:
                 if re.search(REGEX_AWARDS[a], e.lower()): 
-                    award = a
-            if award == None: #and f[0] in winn.values():
-                for a in winn:                    
-                    if winn[a] in e: 
-                        award = a
-            if award:
-                for proper in strip_propers(normalize_str(e).split()):
-                    for a in winn: 
-                        if proper in a:
-                            award = a
-                            break
-                    propers[award] = proper
-        propers_freq = {}
-        for award in propers:
-            freq = FreqDist(propers)
-            propers_freq[award] = freq
+                    awards.append(a)
+            for a in winn:                    
+                if winn[a] in e.lower(): 
+                    awards.append(a)
+            for proper in strip_propers(normalize_str(e).split()):
+                propers.append(proper)
 
-        for award in propers_freq:
-            #for f in propers_freq[award].most_common(25):
-                #award = None
-                #if f[0] in hosts or hosts in f[0]:
-                    #continue            
-            count = 0
-            done = False
+        if len(awards) == 0:
+            continue
+        awards_freq = FreqDist(awards)
+        award = awards_freq.most_common(1)[0][0]
+        freq = FreqDist(propers)    
+        count = 0
+        done = False
 
-            for g in propers_freq[award].most_common(50):
-                for host in hosts:
-                    if g[0] in host or host in g[0]:
-                        continue 
-                #print "HERERERERER!!!!!!!!!!!!!!\n\n"
-                stop = False
-                for nom in nominees[award]:
-                    if nom.lower() in g[0].lower() or g[0].lower() in nom.lower():
+        for g in freq.most_common(200):
+            g = (g[0].strip(' '), g[1])
+            stop = False
+            if 'the' == g[0].lower():
+                continue
+            if g[0] == '':
+                continue
+            if 'film' in award:                 
+                if len(g[0].split(' ')) < 2:
+                    if g[0].count('\'') != 2 and g[0].count('\"') != 2:
+                        continue
+            if 'actor' in award or 'actress' in award or 'director' in award: 
+                if len(g[0].split(' ')) < 2:
+                    continue
+                if g[0].lower().split(' ')[0] not in lower_names and g[0].lower().split(' ')[1] not in lower_names:
+                    continue
+            if g[0] == 'I':
+                continue
+            for host in hosts:
+                if g[0].lower() in host or host in g[0].lower():
+                    stop = True
+                    break
+            for w in winn:
+                if g[0].lower() in winn[w] or winn[w] in g[0].lower():
+                    stop = True
+                    break
+            for p in presenters:
+                for pres in presenters[p]:
+                    if g[0].lower() in pres or pres in g[0].lower():
                         stop = True
                         break
-                if 'the' == g[0].lower():
-                    continue
-                for a in award.split(' '):   
-                    #print "HERERERERER!!!!!!!!!!!!!!"
-                    #if done:
-                        #break           
-                    # if 'actor' in award or 'actress' in award or 'director' in award:
-                    #     replace = False
-                    #     if len(g[0].split(' ')) < 2:
-                    #         for cur_win in winners_freq[award].most_common(25):
-                    #             if g[0] in cur_win[0] and len(cur_win[0].split(' ')) == 2:
-                    #                 g = cur_win
-                    #                 replace = True
-                    #                 break
-                    #         if not replace:
-                    #             break
-                    #     if not replace:
-                    #         if g[0].split(' ')[0] not in lower_names and g[0].split(' ')[1] not in lower_names:
-                    #             break
-                    # if a.lower() in g[0].lower():
-                    #     break
-                    # for ignore in IGNORE_WORDS:
-                    #     if ignore in g[0].lower():
-                    #         stop = True
-                    #         break
-                    # for host in hosts:
-                    #     if host.lower() in g[0]:
-                    #         stop = True
-                    #         break
-                    # if 'song' in award or 'screenplay' in award or 'score' in award:
-                    #     if g[0].count('\'') != 2 and g[0].count('\"') != 2:
-                    #         break                
-                    # if stop:
-                    #     break   
-                    if len(nominees[award]) >= 4:
-                        done = True
-                        break
-                    print "HERERERERER!!!!!!!!!!!!!!"
-                    if 'best' in g[0] or 'award' in g[0]:
-                        continue
-                    nominees[award].append((g[0].strip("\"")))#win[0].strip('\'').strip('\"'))
-                    #test_winners_list[h].append(win)
+            for ignore in IGNORE_WORDS:
+                if ignore in g[0].lower():                      
+                    stop = True
                     break
-            #break
-
-            #for proper in strip_propers(normalize_str(e).split()):
+            for nom in nominees[award]:
+                if nom.lower() in g[0].lower() or g[0].lower() in nom.lower():
+                    stop = True
+                    break
+            if 'the' == g[0].lower():
+                continue
+            if 'i ' in g[0].lower():
+                continue
+            if stop: 
+                continue
+            if len(nominees[award]) >= 4:
+                done = True
+                break
+            if 'best' in g[0].lower() or 'award' in g[0].lower():
+                continue
+            nominees[award].append((g[0].lower().strip("\"")))
+            break
+        
     return nominees
 
 def get_winner(year):
@@ -620,18 +465,12 @@ def get_winner(year):
 
     for award in awards:
         winners_list[award] = []
-    print len(awards)
     for award in reg: 
-        print award
-        award_str = []
-        #if 'actor' not in award or 'comedy' not in award:
-            #continue
+        award_str = []        
         for f in db:
             e = f['text']
             if 'RT' in e:
-                continue
-            #if 'skyfall' in e.lower():
-                #print e
+                continue            
             if 'supporting' not in award:
                 if 'supporting' in e.lower():
                     continue
@@ -640,13 +479,8 @@ def get_winner(year):
                     continue    
             if 'supporting role in a motion picture' in award:
                 if 'miniseries' in e.lower() or 'mini-series' in e.lower():
-                    continue
-            #if 'television' in award:
-                #if 'television' not in e.lower() and 'TV' not in e.lower():
-                    #continue         
+                    continue                
             if re.search(reg[award],e.lower()): 
-                #if 'j.k. simmons' in e.lower():
-                    #print e                   
                 for proper in strip_propers(normalize_str(e).split()):    
                     if 'song' in award:
                         regexpr1 = 'film %s' % proper
@@ -659,61 +493,36 @@ def get_winner(year):
                         regexpr8 = 'from \'%s' % proper
                         regexpr9 = 'from \"%s' % proper 
                         if regexpr1.lower() in e.lower() or regexpr2.lower() in e.lower() or regexpr3.lower() in e.lower() or regexpr4.lower() in e.lower() or regexpr5.lower() in e.lower() or regexpr6.lower() in e.lower() or regexpr7.lower() in e.lower() or regexpr8.lower() in e.lower() or regexpr9.lower() in e.lower():
-                            print e
                             winners_list[award].append(proper.lower().replace('\'','\"').strip(' '))
                     else:
                         winners_list[award].append(proper.lower().replace('\'','\"').strip(' '))
                 continue
 
-    # for f in db:
-    #     e = f['text']
-    #     #if 'selma' in e.lower() or 'glor' in e.lower():
-    #     if 'amy' in e.lower() or 'adams' in e.lower():
-    #         print e
-
     test_winners_list = {}
     for a in winners_list:
         freq = FreqDist(winners_list[a])
         winners_freq[a] = freq
-        #winners[a] = [] 
         test_winners_list[a] = []
     
     for h in winners_freq:
         done = False
-        #print h
-        for win in winners_freq[h].most_common(25):
-            if 'simmons' in win[0].lower():
-                print 'HERE'
-                print h
-                print win
-            #if done:
-                #break
+        for win in winners_freq[h].most_common(25):                        
             stop = False
             if 'the' == win[0].lower():
                 continue
             if win[0] == '':
                 continue
-            for a in h.split(' '):   
-                #if done:
-                    #break     
-                if 'film' in h:
-                    if 'simmons' in win[0].lower():
-                        print 'here4'
+            for a in h.split(' '):                       
+                if 'film' in h:                 
                     if len(win[0].split(' ')) < 2:
                         if win[0].count('\'') != 2 and win[0].count('\"') != 2:
                             for cur_win in winners_freq[h].most_common(25):
                                 if win[0] in cur_win[0] and len(cur_win[0].split(' ')) > 2:
                                     if cur_win[0][0] == '\'' or cur_win[0][0] == '\"':
                                         if cur_win[0][len(cur_win[0])-1] == '\'' or cur_win[0][len(cur_win[0])-1] == '\"':
-                                            win = cur_win
-                                            if 'simmons' in win[0].lower():
-                                                print 'here5'
+                                            win = cur_win                                   
                                             break     
-                if 'actor' in h or 'actress' in h or 'director' in h:
-                    if 'simmons' in win[0].lower():
-                        print 'here3'
-                        print len(win[0].split(' ')) < 2
-                        #print win[0].split(' ')[0] not in lower_names and win[0].split(' ')[1] not in lower_names
+                if 'actor' in h or 'actress' in h or 'director' in h:                    
                     replace = False
                     if len(win[0].split(' ')) < 2:
                         for cur_win in winners_freq[h].most_common(25):
@@ -731,34 +540,23 @@ def get_winner(year):
                 if a.lower() in win[0].lower():
                     break
                 for ignore in IGNORE_WORDS:
-                    if ignore in win[0].lower():
-                        if 'simmons' in win[0].lower():
-                            print 'here1'
+                    if ignore in win[0].lower():                      
                         stop = True
                         break
                 for host in hosts:
                     if host.lower() in win[0]:
-                        if 'simmons' in win[0].lower():
-                            print 'here2'
                         stop = True
                         break
                 if 'song' in h or 'screenplay' in h or 'score' in h:
                     if win[0].count('\'') != 2 and win[0].count('\"') != 2:
-                        break                
-                if 'simmons' in win[0].lower():
-                    print 'stop'
-                    print stop
+                        break                            
                 if stop:
                     break   
                 if not done:
-                    winners[h] = (win[0].strip("\"")) #win[0].strip('\'').strip('\"'))
+                    winners[h] = (win[0].strip("\"")) 
                 test_winners_list[h].append(win)
                 done = True
                 break
-
-    for t in test_winners_list:
-        print t
-        print test_winners_list[t]
     return winners
 
 def get_presenters(year):
@@ -766,7 +564,6 @@ def get_presenters(year):
     names as keys, and each entry a list of strings. Do NOT change the
     name of this function or what it returns.'''
     # Your code here
-    #presenters = {}
     lower_names = []
     for n in names.words():
         lower_names.append(n.lower())
@@ -775,21 +572,17 @@ def get_presenters(year):
         db = json.load(data)
     presenters = []
     awards = OFFICIAL_AWARDS
-    winners = {}
+    presenters = {}
     winners_list = {}
     winners_freq = {}
     hosts = get_hosts(year)
     reg = REGEX_AWARDS
     propers = []
     winn = get_winner(year)
-    print winn.keys()
-    print len(winn)
 
     for award in awards:
         winners_list[award] = []
-    print len(awards)
     for award in reg: 
-        print award
         award_str = []
         for f in db:
             e = f['text']
@@ -810,12 +603,6 @@ def get_presenters(year):
     count = 0
     for f in db:
         e = f['text']
-        if 'salma' in e.lower() or 'hayek' in e.lower():
-            count = 20
-        if count > 0:
-            print e
-            count = count - 1
-            #print e
         if re.search(r'\s(a)?present(s)?(er)?', e.lower()):
             for win in winn:
                 if winn[win] in e.lower():
@@ -832,20 +619,16 @@ def get_presenters(year):
                     if pair[0] not in hosts and pair[1] not in hosts and pair[0] != ' ' and pair[1] != ' ':
                         pairs.append((pair[0].lower().replace('\'','\"').strip(' '), pair[1].lower().replace('\'','\"').strip(' ')))
     pairs_freq = FreqDist(pairs)
-    print pairs_freq.most_common(50)
     for a in winners_list:
         freq = FreqDist(winners_list[a])
         winners_freq[a] = freq
-        winners[a] = [] 
+        presenters[a] = [] 
         test_winners_list[a] = []
     
     for h in winners_freq:
         count = 0
         done = False
-        print h
         for win in winners_freq[h].most_common(25):            
-            #if done:
-                #break
             stop = False
             if 'the' == win[0].lower():
                 continue
@@ -855,31 +638,25 @@ def get_presenters(year):
             for pair in pairs_freq.most_common(50):
                 if win[0].lower() in pair:
                     done = True
-                    winners[h].append(pair[0])
-                    winner[h].append([pair[1]])
+                    presenters[h].append(pair[0])
+                    presenters[h].append([pair[1]])
             if '...' in win[0]:
                 continue
             if 'presents' in win[0].lower():
-                print (win[0].lower().split("presents"))
                 win = ((win[0].lower().split("presents"))[0], win[1])
             if 'presented by' in win[0].lower():
-                print (win[0].lower().split("presented by"))
                 win = ((win[0].lower().split("presented by"))[1], win[1])
             if 'present' in win[0].lower():
-                print (win[0].lower().split("present"))
                 win = ((win[0].lower().split("present"))[0], win[1])
             if any(char.isdigit() for char in win[0]):
                 continue
-            for a in h.split(' '):   
-                #if done:
-                    #break           
+            for a in h.split(' '):           
                 if a.lower() in win[0].lower():
                     break
                 for ignore in IGNORE_WORDS:
                     if ignore in win[0].lower():
                         stop = True
                         break
-                #for w in win[0].split(" "):
                 for host in hosts:
                     if host in win[0]:
                         stop = True
@@ -891,16 +668,14 @@ def get_presenters(year):
                 if stop:
                     break   
                 if not done:
-                    winners[h].append(win[0])
+                    presenters[h].append(win[0])
                 test_winners_list[h].append(win)
                 count = count + 1
                 if count >= 2:
                     done = True
                 break
 
-    for t in test_winners_list:
-        print test_winners_list[t]
-    return winners
+    return presenters
 
 def pre_ceremony():
     '''This function loads/fetches/processes any data your program
@@ -950,23 +725,109 @@ def pre_ceremony():
     print "Pre-ceremony processing complete."
     return
 
+def get_best_dressed(year):
+    year = year[2:4]    
+    file_name = 'dbstore%s.data' % year
+    with open(file_name) as infile:
+        db = pickle.load(infile)
+    ret_l = find_best_dressed(db)
+    return ret_l
+
+def get_best_joke(year):
+    year = year[2:4]    
+    file_name = 'dbstore%s.data' % year
+    with open(file_name) as infile:
+        db = pickle.load(infile)
+    ret_l = find_best_joke(db)
+    return ret_l
+
+def start_interface():
+    def pr_help():
+        print "List of commands:"
+        print "hosts [year] \t Displays the hosts for a given year"
+        print "awards [year] \t Displays the awards for a given year"
+        print "nominees [year] \t Displays the nominees for a given year"
+        print "winners [year] \t Displays the winners for a given year"
+        print "presenters [year] \t Displays the presenters for a given year"
+        print "bestdress [year] \t Displays best dressed individual for a given year"
+        print "bestjoke [year] \t Displays who gave the best joke for a given year"
+        print "help \t Display all available of commands"
+        print "exit \t Quits the program"
+    def check_year(s):
+        if s == "2013" or s == "2015":
+            return True
+        print "Please enter a valid year"
+        return False
+    print "Performing database initialization"
+    pre_ceremony()
+    print "Welcome to GG Awards Parser v2.0!"
+    print "=========================================="
+    print "Enter help for a list of commonly-used commands"
+    print "Special features include: Best Dressed and Best Joke"
+    print "Databases available: 2013, 2015"
+    print "========================================="
+    while True:
+        s_input = raw_input()
+        tokens = s_input.split()
+        if len(tokens) > 2:
+            print "Unknown command. Type help for commands list or exit to quit"
+        elif len(tokens) < 2:
+            if tokens[0] == "help":
+                pr_help()
+            elif tokens[0] == "exit":
+                return
+            else:
+                print "Unknown command. Type help for commands list or exit to quit"
+        else:
+            if tokens[0] == "hosts":
+                if check_year(tokens[1]):
+                    print "Fetching hosts..."
+                    hosts = get_hosts(tokens[1])
+                    for host in hosts:
+                        print host
+            elif tokens[0] == "nominees":
+                if check_year(tokens[1]):
+                    print "Fetching nominees..."
+                    nominees = get_nominees(tokens[1])
+                    for nominee in nominees:
+                        print nominee
+            elif tokens[0] == "awards":
+                if check_year(tokens[1]):
+                    print "Fetching awards..."
+                    awards = get_awards(tokens[1])
+                    for award in awards:
+                        print award
+            elif tokens[0] == "winners":
+                if check_year(tokens[1]):
+                    print "Fetching winners..."
+                    winners = get_winner(tokens[1])
+                    for winner in winners:
+                        print winner
+            elif tokens[0] == "presenters":
+                if check_year(tokens[1]):
+                    print "Fetching presenters..."
+                    presenters = get_presenters(tokens[1])
+                    for p in presenters:
+                        print p
+            elif tokens[0] == "bestdress":
+                if check_year(tokens[1]):
+                    print "Fetching best dressed..."
+                    print get_best_dressed(tokens[1])
+            elif tokens[0] == "bestjoke":
+                if check_year(tokens[1]):
+                    print "Fetching best joke..."
+                    print get_best_joke(tokens[1])
+            else:
+                print "Unknown command. Type help for commands list or exit to quit"
+
 def main():
     '''This function calls your program. Typing "python gg_api.py"
     will run this function. Or, in the interpreter, import gg_api
     and then run gg_api.main(). This is the second thing the TA will
     run when grading. Do NOT change the name of this function or
     what it returns.'''
-    #db = db2013
-    # Your code here
-    #events = get_pn_vec_from_range(db2013)
-    #for e in events:
-    #print e.most_common(50)
-    #print get_hosts('2015')
-    #print get_presenters('2013')
-    #print get_winner('2015')
-    #print get_awards('2013')
-    #get_nominees('2013')
     pre_ceremony()
+    start_interface()
 
     return
 
