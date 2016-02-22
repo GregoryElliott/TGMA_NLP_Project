@@ -1,6 +1,7 @@
 # GG Awards Parser
 Team 6
 Greg Elliott, Matt George, Tim Sullivan, Athif Wulandana
+### Runtime: ~25 Minutes
 ### Overview
 GG Awards Parser is a tweet parsing system that extracts information from a given json database of tweets. Using event logic, the parser classifies information pertaining to the awards, winners, presenters, hosts and nominees included within the database. 
 
